@@ -13,5 +13,6 @@
     "Lua.workspace.checkThirdParty": false,
     "Lua.workspace.library": [
         "${3rd}/love2d/library"
-    ]
+    ],
+    "code-runner.runInTerminal": true
 }

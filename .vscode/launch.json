@@ -2,13 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Love2D: Run via task",
-            "type": "node",
+            "name": "Debug Current Lua File",
+            "type": "lua-local",
             "request": "launch",
-            "runtimeExecutable": "echo",
+            "program": {
+                "command": "lua"
+            },
             "args": [
-                "Use the task: Love2D: Run project"
-            ]
+                "${file}"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }
