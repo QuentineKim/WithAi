@@ -1,14 +1,305 @@
--- Lua는 여러 값을 반환할 수 있다 (C#의 out/tuple보다 깔끔)
-local function findEnemy()
-    return "Slime", 100, 50     -- name, hp, mp
+-- Lv.1 기초 찾기 (1-20)
+-- 1. text = "I like apple pie."에서 apple의 포함 여부와 위치를 구한다.
+local text = "I like apple pie."
+local a = string.find(text, "apple")
+if a then
+    print("Found at 1 :", a)
+else
+    print("Not found")
+end
+-- 2. text = "A small game starts today."에서 game의 시작 위치를 구한다.
+local text2 = "A small game starts today."
+local b = string.find(text2, "game")
+if b then
+    print("Found at 2 :", b)
+else
+    print("Not found")
+end
+-- 3. text = "Lua lua LUA"에서 소문자 lua의 첫 위치를 구한다.
+local text3 = "Lua lua LUA"
+local c = string.find(text3, "lua")
+if c then
+    print("Found at 3 :", c)
+else
+    print("Not found")
+end
+-- 4. text = "hello world"에서 첫 공백 위치를 구한다.
+local text4 = "hello world"
+local d = string.find(text4, " ")
+if d then
+    print("Found at 4 :", d)
+else
+    print("Not found")
+end
+-- 5. text = "red,green,blue"에서 첫 콤마 위치를 구한다.
+local text5 = "red,green,blue"
+local e = string.find(text5, ',')
+if e then
+    print("Found at 5 :", e)
+else
+    print("Not found")
+end
+-- 6. text = "banana"에서 a가 마지막으로 나타나는 위치를 구한다.
+local text6 = "banana"
+local _, last_pos = string.find(text6, '.*a')
+print("Found at 6 : ", last_pos)
+-- 7. text = "ID: player-01"이 ID:로 시작하는지 확인한다.
+local text7 = "ID: player-01"
+if string.find(text7, "^ID:") then
+    print("Found at 7 :    yes")
+else
+    print("Not found")
+end
+-- 8. text = "sprite/player.png"가 .png로 끝나는지 확인한다.
+local text8 = "sprite/player.png"
+print("Found at 8 :", string.match(text8, "%.png$"))
+-- 9. text = "ERROR: file not found"에 error가 있는지 확인한다. 대소문자 구분 여부도 관찰한다.
+local text9 = "ERROR: file not found"
+local g = string.find(text9, "error")
+print("Found at 9 대소문자 구분 :", g)
+local g2 = string.find(text9:lower(), "error")
+print("Found at 9 소문자 변환 :", g2)
+
+-- 10. text = "Visit https://example.com now"에서 ://의 위치를 구한다.
+local text10 = "Visit https://example.com now"
+local a = string.find(text10, "://", 1, true)
+print("Found at 10 :", a)
+-- 11. text = "ha ha ha"에서 두 번째 ha의 위치를 구한다.
+local text11 = "ha ha ha"
+local _, a = string.find(text11, "ha")
+local b = string.find(text11, "ha", a + 1)
+print("Found at 11 :", b)
+-- 12. text = "ab--ab--ab"에서 세 번째 ab의 위치를 구한다.
+local text12 = "ab--ab--ab"
+local a = 1
+local s, e
+for i = 1, 3 do
+    s, e = string.find(text12, "ab", a, true)
+    if not s then break end
+    a = e + 1
+end
+if s then
+    print("Found at 12 :", s)
+else
+    print("Not found")
 end
 
-local name, hp, mp = findEnemy()
-print(name, hp, mp)    -- Slime  100  50
+-- 13. text = "12345 cat 678"에서 6번째 문자 이후의 cat 위치를 구한다.
+local text13 = "12345 cat 678"
+local a = string.find(text13, "cat", 6)
+if a then
+    print("Found at 13 :", a)
+else
+    print("Not found")
+end
+-- 14. text = "This is a simple island."에서 is가 나타나는 모든 위치를 구한다.
+local text14 = "This is a simple island."
+local a = 1
+local b = {}
+while true do
+    local s, e = string.find(text14, "is", a, true)
+    if not s then break end
+    table.insert(b, s)
+    a = e + 1
+end
+print("Found at 14 :", table.concat(b, ", "))
 
--- 필요 없는 값은 버린다
-local name = findEnemy()    -- hp, mp 버려짐
+-- 15. text = "name [player] score"에서 첫 [와 ]의 위치를 구한다.
+local text15 = "name [player] score"
+local a = string.find(text15, "[", 1, true)
+local b = string.find(text15, "]", a, true)
+if a then
+    print("Found at 15 :", a, b)
+else
+    print("Not found")
+end
+-- 16. text = "player level 42"에 숫자가 있는지 확인한다.
+local text16 = "player level 42"
+print("Found at 16 :", string.match(text16, "%d+$"))
+-- 17. text = "123456"에 숫자가 아닌 문자가 있는지 확인한다.
+local text17 = "123456"
+if string.match(text17, "%D+") then
+    print("Found at 17 :yes")
+else
+    print("Found at 17 :no")
+end
+-- 18. text = "level Up"에서 첫 대문자 위치를 구한다.
+local text18 = "level Up"
+-- 19. text = "1234abcDEF"에서 5번째 문자 이후 첫 소문자 위치를 구한다.
+local text19 = "1234abcDEF"
+-- 20. text = "price = 9.99"에서 점(.) 문자의 위치를 구한다.
+local text20 = "price = 9.99"
+-- Lv.2 find 패턴 확장 (21-35)
+-- 21. text = "cat scatter catapult cat"에서 독립 단어 cat의 위치만 찾는다.
+local text21 = "cat scatter catapult cat"
+-- 22. text = "one  two   three"에서 2칸 이상 연속된 공백의 위치를 구한다.
+local text22 = "one  two   three"
+-- 23. text = "Servers: 10.0.0.1 and 192.168.1.20"에서 첫 IPv4 형태의 위치를 구한다.
+local text23 = "Servers: 10.0.0.1 and 192.168.1.20"
+-- 24. text = "Events: 2026-09-05 and 2026-12-25"에서 첫 날짜의 위치를 구한다.
+local text24 = "Events: 2026-09-05 and 2026-12-25"
+-- 25. text = [[say "hello world" then "bye"]]에서 첫 큰따옴표 문자열의 범위를 구한다.
+local text25 = [[say "hello world" then "bye"]]
+-- 26. text = "<div>content</div> <span>text</span>"에서 첫 태그 구간의 범위를 구한다.
+local text26 = "<div>content</div> <span>text</span>"
+-- 27. text = "draw(player, 10, 20)"에서 함수 호출 이름 draw의 위치를 구한다.
+local text27 = "draw(player, 10, 20)"
+-- 28. text = "flags: 0xFF and 0x10"에서 첫 16진수 토큰의 위치를 구한다.
+local text28 = "flags: 0xFF and 0x10"
+-- 29. text = "local hp = 100 -- player health"에서 주석 시작 위치를 구한다.
+local text29 = "local hp = 100 -- player health"
+-- 30. text = "move(10, 20) then wait()"에서 첫 괄호 블록의 범위를 구한다.
+local text30 = "move(10, 20) then wait()"
+-- 31. text = "Contact dev@example.com for help"에서 이메일의 위치를 구한다.
+local text31 = "Contact dev@example.com for help"
+-- 32. text = "Values: 3.14, 10.0, 7"에서 첫 소수의 위치를 구한다.
+local text32 = "Values: 3.14, 10.0, 7"
+-- 33. text = "name\tvalue"에서 첫 탭 또는 공백의 위치를 구한다.
+local text33 = "name\tvalue"
+-- 34. text = "HP=120 MP=35"에서 첫 숫자 덩어리의 범위를 구한다.
+local text34 = "HP=120 MP=35"
+-- 35. text = "Load /assets/images/player.png now"에서 첫 경로의 범위를 구한다.
+local text35 = "Load /assets/images/player.png now"
+-- Lv.3 match 기초 추출 (36-50)
+-- 36. text = "There are 24 enemies."에서 첫 숫자를 추출한다.
+local text36 = "There are 24 enemies."
+-- 37. text = "Email: knight@example.com"에서 @ 앞 사용자명을 추출한다.
+local text37 = "Email: knight@example.com"
+-- 38. text = "Email: knight@example.com"에서 @ 뒤 도메인을 추출한다.
+local text38 = "Email: knight@example.com"
+-- 39. text = "Save file: player.stats.json"에서 확장자를 추출한다.
+local text39 = "Save file: player.stats.json"
+-- 40. text = "https://game.example.com/start"에서 프로토콜을 추출한다.
+local text40 = "https://game.example.com/start"
+-- 41. text = "Release date: 2026/09/05"에서 연, 월, 일을 각각 추출한다.
+local text41 = "Release date: 2026/09/05"
+-- 42. text = "Start at 08:35 sharp"에서 시와 분을 각각 추출한다.
+local text42 = "Start at 08:35 sharp"
+-- 43. text = "name=kim"에서 key와 value를 추출한다.
+local text43 = "name=kim"
+-- 44. text = "Hello brave player"에서 첫 단어를 추출한다.
+local text44 = "Hello brave player"
+-- 45. text = "The final score"에서 마지막 단어를 추출한다.
+local text45 = "The final score"
+-- 46. text = "color = rgb(12,34,56)"에서 R, G, B 값을 추출한다.
+local text46 = "color = rgb(12,34,56)"
+-- 47. text = "position: x=10,y=20"에서 x 값과 y 값을 추출한다.
+local text47 = "position: x=10,y=20"
+-- 48. text = "Changes: +42 -7 0"에서 첫 정수의 부호와 숫자를 분리한다.
+local text48 = "Changes: +42 -7 0"
+-- 49. text = "price=12.50"에서 정수부와 소수부를 분리한다.
+local text49 = "price=12.50"
+-- 50. text = "bookkeeper"에서 처음 연속 중복되는 문자를 찾는다.
+local text50 = "bookkeeper"
+-- Lv.4 match 중급 파싱 (51-65)
+-- 51. text = "player_01"이 식별자 규칙에 맞는지 전체 검증한다. "1player"도 시험한다.
+local text51 = "player_01"
+-- 52. text = "score = 1234"에서 변수명과 값을 추출한다.
+local text52 = "score = 1234"
+-- 53. text = "local hp = 100"에서 변수명과 숫자값을 추출한다.
+local text53 = "local hp = 100"
+-- 54. text = "move(player, 10, 20)"에서 함수명과 인자 문자열을 추출한다.
+local text54 = "move(player, 10, 20)"
+-- 55. text = "user:'tom'"에서 key와 따옴표 안 value를 추출한다.
+local text55 = "user:'tom'"
+-- 56. text = "[INFO] init done"에서 로그 레벨과 메시지를 추출한다.
+local text56 = "[INFO] init done"
+-- 57. text = "[2026-09-05 10:30:15] hello"에서 날짜, 시간, 메시지를 추출한다.
+local text57 = "[2026-09-05 10:30:15] hello"
+-- 58. text = "version v1.2.3"에서 major, minor, patch를 추출한다.
+local text58 = "version v1.2.3"
+-- 59. text = "accent color: #FFA07A"에서 RR, GG, BB를 추출한다.
+local text59 = "accent color: #FFA07A"
+-- 60. text = "report.final.txt"에서 확장자를 제외한 베이스 이름을 추출한다.
+local text60 = "report.final.txt"
+-- 61. text = "### Intro to Lua"에서 샵 개수와 제목을 추출한다.
+local text61 = "### Intro to Lua"
+-- 62. text = "  key_name : some value  "에서 key와 value를 공백을 제외하고 추출한다.
+local text62 = "  key_name : some value  "
+-- 63. text = "updated 2026-09-05T14:30"에서 날짜와 시간을 추출한다.
+local text63 = "updated 2026-09-05T14:30"
+-- 64. text = "function foo_bar123(a, b)"에서 함수명을 추출한다.
+local text64 = "function foo_bar123(a, b)"
+-- 65. text = "game.core.player"에서 마지막 모듈 세그먼트를 추출한다.
+local text65 = "game.core.player"
+-- Lv.5 gmatch 기초 순회 (66-80)
+-- 66. text = "Hello, brave Lua player!"의 모든 단어를 순회한다.
+local text66 = "Hello, brave Lua player!"
+-- 67. text = "One two three four five"의 단어 개수를 센다.
+local text67 = "One two three four five"
+-- 68. text = "Player 12 found 3 keys and 100 coins"의 모든 숫자를 추출한다.
+local text68 = "Player 12 found 3 keys and 100 coins"
+-- 69. text = "sword,shield,potion,bow"의 모든 CSV 셀을 순회한다.
+local text69 = "sword,shield,potion,bow"
+-- 70. text = "New #lua #game_dev release"의 모든 해시태그를 추출한다.
+local text70 = "New #lua #game_dev release"
+-- 71. text = "Thanks @alice and @bob for testing"의 모든 멘션을 추출한다.
+local text71 = "Thanks @alice and @bob for testing"
+-- 72. text = "assets/images/player/avatar.png"를 슬래시 기준으로 토큰화한다.
+local text72 = "assets/images/player/avatar.png"
+-- 73. text = "first line\nsecond line\nthird line"의 각 줄을 순회한다.
+local text73 = "first line\nsecond line\nthird line"
+-- 74. text = "user=kim&level=15&mode=hard"의 모든 key,value 쌍을 추출한다.
+local text74 = "user=kim&level=15&mode=hard"
+-- 75. text = "A 7 B 42 C 105 D 99"에서 두 자리 숫자 토큰만 추출한다.
+local text75 = "A 7 B 42 C 105 D 99"
+-- 76. text = "x:10,y:20,z:30"의 좌표를 테이블로 만든다.
+local text76 = "x:10,y:20,z:30"
+-- 77. text = "Lua lua GAME game game"의 단어 빈도를 대소문자 무시 기준으로 집계한다.
+local text77 = "Lua lua GAME game game"
+-- 78. text = "<div>Hello</div><p>World</p><img>"의 태그 이름을 순회한다.
+local text78 = "<div>Hello</div><p>World</p><img>"
+-- 79. text = [[print("hello") say("world again")]]의 큰따옴표 문자열을 추출한다.
+local text79 = [[print("hello") say("world again")]]
+-- 80. text = "Builds: 2026-01-01, 2026-05-30, 2026-09-05"의 모든 날짜를 추출한다.
+local text80 = "Builds: 2026-01-01, 2026-05-30, 2026-09-05"
+-- Lv.6 gmatch 고급 파싱 (81-90)
+-- 81. text = "local player_1 = enemy2 + 10"에서 Lua 식별자 토큰을 추출한다.
+local text81 = "local player_1 = enemy2 + 10"
+-- 82. text = "draw(player) move(enemy, 2) wait()"에서 함수 호출 이름을 추출한다.
+local text82 = "draw(player) move(enemy, 2) wait()"
+-- 83. text = "scores = [1, 2, 3, 4]"에서 정수를 배열로 만든다.
+local text83 = "scores = [1, 2, 3, 4]"
+-- 84. text = "delta=-3.5 speed=10.0 bonus=+2"에서 부호가 있는 숫자 토큰을 추출한다.
+local text84 = "delta=-3.5 speed=10.0 bonus=+2"
+-- 85. text = "TODO: add sound\nFIXME: reset state\nTODO: tune balance"에서 TODO 항목을 추출한다.
+local text85 = "TODO: add sound\nFIXME: reset state\nTODO: tune balance"
+-- 86. text = [[id="p01" name="Blue Knight" class="warrior"]]에서 모든 속성 key,value를 추출한다.
+local text86 = [[id="p01" name="Blue Knight" class="warrior"]]
+-- 87. text = "[INFO] start\n[ERROR] fail\n[WARN] retry\n[ERROR] timeout"에서 레벨별 줄 수를 집계한다.
+local text87 = "[INFO] start\n[ERROR] fail\n[WARN] retry\n[ERROR] timeout"
+-- 88. text = "draw(player, move(enemy, 10)) wait()"에서 괄호 블록을 순회 추출한다.
+local text88 = "draw(player, move(enemy, 10)) wait()"
+-- 89. text = "player.attack enemy.move ui.show"에서 모듈명.함수명 토큰을 추출한다.
+local text89 = "player.attack enemy.move ui.show"
+-- 90. text = "the quick brown brown fox and the the dog"에서 중복 단어와 위치를 찾는다.
+local text90 = "the quick brown brown fox and the the dog"
+-- Lv.7 종합/어려움 (91-100)
+-- 91. text = "banana bandana"에서 겹치는 ana의 모든 위치를 찾는다.
+local text91 = "banana bandana"
+-- 92. text = "# Title\nintro\n## Chapter 1\ntext\n### Details"에서 제목 라인의 위치와 제목을 추출한다.
+local text92 = "# Title\nintro\n## Chapter 1\ntext\n### Details"
+-- 93. text = "[graphics]\nwidth=1280\nheight=720\n\n[audio]\nvolume=80"를 INI 구조로 파싱한다.
+local text93 = "[graphics]\nwidth=1280\nheight=720\n\n[audio]\nvolume=80"
+-- 94. text = [[load "player one" --verbose 2]]를 따옴표 안 공백을 보존하는 토큰 배열로 만든다.
+local text94 = [[load "player one" --verbose 2]]
+-- 95. text = "Hello {{name}}, you scored {{score}} points."에서 플레이스홀더 이름과 위치를 추출한다.
+local text95 = "Hello {{name}}, you scored {{score}} points."
+-- 96. text = [[127.0.0.1 - frank [05/Sep/2026:10:30:15 +0900] "GET /index.html HTTP/1.1" 200 1234]]를 필드별로 파싱한다.
+local text96 = [[127.0.0.1 - frank [05/Sep/2026:10:30:15 +0900] "GET /index.html HTTP/1.1" 200 1234]]
+-- 97. text = [[10.0.0.2 - - [05/Sep/2026:10:31:00 +0900] "GET /missing HTTP/1.1" 404 512 "-" "Mozilla/5.0"]]에서 - 필드도 보존한다.
+local text97 = [[10.0.0.2 - - [05/Sep/2026:10:31:00 +0900] "GET /missing HTTP/1.1" 404 512 "-" "Mozilla/5.0"]]
+-- 98. text = "Read [Lua guide](https://lua.org) and [API docs](https://lua.org/manual)"에서 링크를 모두 추출한다.
+local text98 = "Read [Lua guide](https://lua.org) and [API docs](https://lua.org/manual)"
+-- 99. text = "[2026-09-05 10:00] [INFO] core: started\n[2026-09-05 10:01] [WARN] net: slow\n[2026-09-05 10:02] [ERROR] save: failed"에서 분류, 타임스탬프, 모듈, 메시지, 카운트를 추출한다.
+local text99 =
+"[2026-09-05 10:00] [INFO] core: started\n[2026-09-05 10:01] [WARN] net: slow\n[2026-09-05 10:02] [ERROR] save: failed"
+-- 100. text = [[local hp = 100 -- initial\nmove(player, 10)\nname = "Knight Mage"\nif hp > 0 then attack() end]]를 식별자, 숫자, 문자열, 연산자, 주석 토큰으로 분류하고 첫 오류 위치를 보고한다.
+local text100 = [[local hp = 100 -- initial\nmove(player, 10)\nname = "Knight Mage"\nif hp > 0 then attack() end]]
 
--- 관례: 불필요한 값은 _ 로 받는다
-local _, _, mp = findEnemy()
 
+-- 실행용 기본 틀
+-- local text = "여기에 문제의 text를 넣으세요"
+
+-- 문제에 따라 find, match, gmatch 중 하나를 선택하세요.
+-- 결과를 print하거나 테이블에 저장해 확인하세요.
