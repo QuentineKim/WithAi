@@ -15,7 +15,7 @@
         "${3rd}/love2d/library"
     ],
     "code-runner.executorMap": {
-        "lua": "/opt/homebrew/bin/lua5.1"
+        "lua": "lua"
     },
     "code-runner.runInTerminal": false,
     "code-runner.saveFileBeforeRun": true,
