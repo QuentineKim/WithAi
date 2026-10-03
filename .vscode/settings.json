@@ -15,7 +15,7 @@
         "${3rd}/love2d/library"
     ],
     "code-runner.executorMap": {
-        "lua": "lua"
+        "lua": "cd \"$dir\" && lua \"$fileName\""
     },
     "code-runner.runInTerminal": false,
     "code-runner.saveFileBeforeRun": true,
