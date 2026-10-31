@@ -12,7 +12,7 @@ local WIDTH, HEIGHT = 800, 600
 local PADDLE_W, PADDLE_H = 16, 100
 local PADDLE_SPEED = 360 -- px/s
 local BALL_SIZE = 16
-local BALL_SPEED = 300 -- px/s
+local BALL_SPEED = 300   -- px/s
 
 -- ── 엔티티 ────────────────────────────────────────────────────────────────
 local Paddle = class()
@@ -57,9 +57,9 @@ end
 -- ── 충돌 (AABB) ──────────────────────────────────────────────────────────
 local function overlaps(a, b)
   return a.x < b.x + b.w
-    and b.x < a.x + a.w
-    and a.y < b.y + b.h
-    and b.y < a.y + a.h
+      and b.x < a.x + a.w
+      and a.y < b.y + b.h
+      and b.y < a.y + a.h
 end
 
 -- ── 게임 상태 ────────────────────────────────────────────────────────────

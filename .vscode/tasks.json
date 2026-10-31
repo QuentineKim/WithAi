@@ -18,6 +18,36 @@
             "problemMatcher": []
         },
         {
+            "label": "Love2D: Run My Pong",
+            "type": "shell",
+            "command": "love",
+            "args": [
+                "${workspaceFolder}/lua_tuto/mvc/week01/my_pong"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/love-11.5-win64/lovec.exe",
+                "args": [
+                    "${workspaceFolder}/lua_tuto/mvc/week01/my_pong"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Love2D: Run Pong (Example)",
+            "type": "shell",
+            "command": "love",
+            "args": [
+                "${workspaceFolder}/lua_tuto/mvc/week01/examples/pong"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/love-11.5-win64/lovec.exe",
+                "args": [
+                    "${workspaceFolder}/lua_tuto/mvc/week01/examples/pong"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Love2D: Run project (Global)",
             "type": "shell",
             "command": "love",

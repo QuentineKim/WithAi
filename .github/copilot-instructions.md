@@ -24,6 +24,11 @@
 - LÖVE2D 실행: Love2D: Run project
 - 환경 차이가 있으면 task 이름을 우선하고, 대체 실행 경로는 설명에 분리합니다.
 
+Git 커밋 메시지 생성 규칙:
+- 커밋 메시지는 반드시 **한국어(Korean)**로 작성합니다.
+- 첫 줄 제목은 Conventional Commits 형식(`feat:`, `fix:`, `refactor:`, `docs:`, `style:`, `test:`, `chore:`)을 준수하며 50자 이내로 명확하게 요약합니다 (마침표 제외).
+- 본문이 필요한 경우 빈 줄 후 변경 이유와 주요 내용을 개조식(`- `) 한국어로 명확히 기술합니다.
+
 참조 규칙과 컨벤션:
 - AGENTS.md
 - docs/ai/conventions.md

@@ -12,6 +12,7 @@
 2. LÖVE2D의 **수명주기**(`load`/`update(dt)`/`draw`)와 역할 분리를 설명할 수 있다.
 3. **고정 타임스텝(fixed timestep)**이 왜 필요한지 설명하고 accumulator 패턴을 구현할 수 있다.
 4. 위 세 가지를 합쳐 **결정적인 Pong**을 처음부터 작성할 수 있다.
+5. **(심화)** 단일 모놀리식 구조를 단일 책임 원칙(SRP)과 Passive View 기반 모듈로 리팩토링하고, 자율 AI 및 수학적 시뮬레이션 모델을 구축할 수 있다.
 
 ---
 
@@ -25,6 +26,7 @@
 | 2.0h | 실습 | Pong 처음부터 구현 | `pong/` |
 | 1.5h | 실습 | 공 반사를 고정 스텝으로 처리 | `pong/main.lua` |
 | 1.0h | 검증 | 프레임률 독립성 확인 | 검증 메모 |
+| **+@** | **심화** | **모듈 분리 & AI 퀀트 베팅 아레나** | **`my_pong/`** |
 
 ---
 
@@ -171,6 +173,38 @@ end
 
 ---
 
+### 4-4. [심화 확장 실습] 자율 AI 대전 & 퀀트 베팅 아레나 (`my_pong/`)
+
+실습 4번의 기본 Pong을 기반으로, 소프트웨어 엔지니어링(SE) 및 게임 알고리즘 기법을 적용해 **완전 분리형 아키텍처**와 **자율 AI 시뮬레이션 시스템**으로 대폭 확장한 프로젝트입니다.
+
+#### 1) 단일 책임 원칙(SRP) 기반 모듈 분리
+- **`Paddle.lua` / `Ball.lua`:** 물리 상태 및 트론 라이트 잔상 큐를 관리하는 독립 클래스.
+- **`ParticleSystem.lua`:** 충돌 시 생성되는 네온 스파크 파티클의 방출 및 물리 계산 격리.
+- **`Renderer.lua` (Passive View):** 상태 변경 코드가 전혀 없는 순수 뷰 모듈. 한글 TTF 폰트 기반 네온 HUD 및 실시간 스파크라인 차트 렌더링.
+- **`constants.lua`:** 해상도(1000x640), 트론 색상 팔레트, 물리 가속 계수 등 전역 상수 집중화.
+
+#### 2) 자율 AI 에이전트 2종 (`AIControllers.lua`)
+- **에이전트 알파 (광선 추적 예측 모델 - The Physicist):** 상/하 벽 반사 주기를 모듈러 수학 방정식으로 미리 계산하여 착탄 예상 지점에 사전 배치. 초고속 시 인간미 있는 예측 노이즈(Jitter) 발생.
+- **에이전트 베타 (실시간 PD 제어 추적 모델 - The Reflex):** 비례-미분 제어로 공의 현재 위치와 속도 벡터를 부드럽게 추종.
+
+#### 3) 무제한 구속 가속 & 서브스텝(Sub-stepping) 터널링 방지
+- 패들 타격 시마다 구속이 **8%씩 무제한 가속**(`BALL_ACCEL = 1.08`).
+- 공이 초광속(1,000~3,000+ px/s)에 도달해도 패들을 뚫고 지나가는 **터널링(Tunneling)**을 방지하기 위해, 1스텝당 최대 10px 단위로 서브스텝을 분할 계산(`updateBallAndCollisions`).
+- 공 속도가 패들 이동 속도(420 px/s)를 넘어서면서 **10~30회 내외의 긴장감 넘치는 랠리 끝에 통쾌하게 득점**이 발생하도록 밸런스 조정.
+
+#### 4) 수학적 승률 예측 & 켈리 기준 도박꾼 AI 4인방 (`AnalyticsEngine.lua`, `BettingMarket.lua`)
+- **체스 ELO 레이팅 시스템 ($K=32$):** 매 경기 승패마다 두 AI의 ELO 레이팅 갱신 및 기대 승률($E$) 산출.
+- **동적 배당률(Odds):** 북메이커 마진(8%)이 반영된 실시간 배당률 계산.
+- **도박꾼 AI 4인방 라인업:**
+  1. `켈리 퀀트`: 켈리 공식($f^* = \frac{bp-q}{b}$)에 따라 기댓값 플러스일 때만 최적 분산 투자.
+  2. `역배 사냥꾼`: 2.0배 이상의 고배당 역배에 공격적 베팅.
+  3. `정배 올인러`: 승률 우세 쪽에 자산의 40% 몰빵.
+  4. `마틴게일`: 패배 시 베팅액을 2배씩 늘려 배수 베팅 (파산 시 `[파산]` 처리).
+- **관전자 올인(ALL-IN) 시스템:** `[A]` 키로 전재산 올인 및 잭팟/탕진 실시간 토스트 연출.
+- **초고속 시뮬레이션:** `[Tab]` 키로 1x / 5x / 20x 배속 전환 지원.
+
+---
+
 ## 5. 검증 — 프레임률 독립성 (1.0h)
 
 이 과정의 핵심 습관: **"실행해서 눈으로" 전에 "하네스로 수치 확인"**.
@@ -187,37 +221,58 @@ end
 ## 6. 과제 & 체크리스트
 
 ### 과제
-- [ ] `class.lua`로 `Animal`→`Dog` 상속을 작성하고 오버라이드/상속을 확인한다.
-- [ ] Pong을 완성한다(2인 플레이, 점수 표시).
-- [ ] **(도전)** `FIXED_DT`를 `1/30`으로 바꿔도 공 궤적이 "비율적으로" 동일한지 관찰하고 메모한다.
+- [x] `class.lua`로 `Animal`→`Dog` 상속을 작성하고 오버라이드/상속을 확인한다. (`examples/01_class_demo.lua`)
+- [x] Pong을 완성한다 (2인 플레이, 점수 표시) ➔ **`my_pong/`로 고도화 확장 완료**.
+- [x] **(도전)** `FIXED_DT`를 `1/30`으로 바꿔도 공 궤적이 "비율적으로" 동일한지 관찰하고 메모한다.
+- [x] **(심화 확장)** 자율 AI 2종 대전 + ELO/배당률 엔진 + 켈리 기준 도박꾼 AI 4인방 + 무제한 구속 가속 및 초고속 서브스텝 물리 시뮬레이션 구현.
 
 ### 자기 점검 체크리스트
-- [ ] `draw` 안에서 상태(좌표·점수)를 바꾸지 않았다.
-- [ ] 암묵적 전역이 없다(`local` 사용, 모듈은 `return`).
-- [ ] 이동은 전부 `* dt` 또는 고정 스텝 기반이다.
-- [ ] 루프 안에서 불필요한 테이블 생성을 하지 않았다.
+- [x] `draw` 안에서 상태(좌표·점수)를 바꾸지 않았다. (`Renderer.lua` 순수 읽기 전용 뷰 분리)
+- [x] 암묵적 전역이 없다 (`local` 사용, 모든 모듈은 `return`).
+- [x] 이동은 전부 `* dt` 또는 고정 스텝 기반이다 (초광속 구속에서도 서브스텝 터널링 방지).
+- [x] 루프 안에서 불필요한 테이블 생성을 하지 않았다 (GC 최적화).
 
 ---
 
-## 📁 예제 파일 안내
+## 📁 디렉토리 구조 및 실습 프로젝트 안내
 
 ```
 week01/
-  README.md                       ← (이 문서)
-  examples/
+  README.md                       ← (본 문서)
+  examples/                       ← 튜토리얼 기본 예제 (보존)
     class.lua                     ← 메타테이블 클래스 유틸 (공용)
     01_class_demo.lua             ← lua로 실행: 상속/오버라이드 데모
     02_fixed_timestep_demo.lua    ← lua로 실행: 고정 타임스텝 결정성 증명(헤드리스)
-    pong/
+    pong/                         ← 튜토리얼 기본 Pong (2인 조작, 고정 스텝)
       conf.lua                    ← 창 설정
-      class.lua                   ← 클래스 유틸 (pong 내부용 사본)
-      main.lua                    ← Pong 본체 (update/draw 분리, 고정 스텝)
+      class.lua                   ← 클래스 유틸 사본
+      main.lua                    ← 기본 Pong 본체
+  my_pong/                        ← [실습 4 확장 프로젝트] 트론 카지노 & AI 퀀트 베팅 아레나
+    README.md                     ← 프로젝트 아키텍처 및 수학 공식 명세서
+    class.lua                     ← 클래스 생성 유틸
+    constants.lua                 ← 규격, 색상 테마, 물리 상수
+    Paddle.lua                    ← 패들 엔티티 클래스
+    Ball.lua                      ← 공 엔티티 클래스 (트론 라이트 궤적 큐 관리)
+    AIControllers.lua             ← 자율 AI 2종 (광선예측 알파 vs 반응형 베타)
+    AnalyticsEngine.lua           ← ELO 레이팅(K=32), 기대승률, 동적 배당률(Odds), 모멘텀
+    BettingMarket.lua             ← 도박꾼 AI 4인방(켈리/역배/정배/마틴게일) & 관전자 올인
+    ParticleSystem.lua            ← 네온 스파크 파티클 물리 시뮬레이션
+    Renderer.lua                  ← 한글 네온 HUD & 자산 스파크라인 차트 (순수 View)
+    font.ttf                      ← 한글 TTF 폰트 탑재 (깨짐 방지)
+    conf.lua                      ← 1000x640 와이드 창 설정
+    main.lua                      ← 무제한 구속 가속, 서브스텝 터널링 방지, 메인 루프
 ```
 
 ### 실행 방법
-- 순수 Lua 데모: `cd lua_tuto/mvc/week01/examples && lua 01_class_demo.lua`
-- 고정 스텝 데모: `cd lua_tuto/mvc/week01/examples && lua 02_fixed_timestep_demo.lua`
-- Pong 실행: `love lua_tuto/mvc/week01/examples/pong`
-  - 조작: 왼쪽 패들 `W`/`S`, 오른쪽 패들 `↑`/`↓`, 종료 `Esc`
-
-> 환경에 따라 `lua` 대신 `luajit`, `love` 경로 차이가 있을 수 있다. task `Lua: Run current file` / `Love2D: Run project`를 우선 사용한다.
+- **순수 Lua 데모:** `cd lua_tuto/mvc/week01/examples && lua 01_class_demo.lua` (Task: `Lua: Run current file`)
+- **고정 스텝 결정성 데모:** `cd lua_tuto/mvc/week01/examples && lua 02_fixed_timestep_demo.lua`
+- **기본 Pong 예제 실행:** Task `Love2D: Run Pong (Example)` 또는 `love lua_tuto/mvc/week01/examples/pong`
+- **확장 카지노 Pong 실행 (추천):** Task `Love2D: Run My Pong` 또는 `love lua_tuto/mvc/week01/my_pong`
+  - `1`: 알파에 베팅 ($50 / $100 / $250)
+  - `2`: 베타에 베팅 ($50 / $100 / $250)
+  - `A`: **전재산 올인 (ALL-IN)!**
+  - `C`: 베팅 단위 변경 ($50 ➔ $100 ➔ $250)
+  - `Tab`: 시뮬레이션 배속 전환 (1x ➔ 5x ➔ 20x)
+  - `Space`: 일시정지 / 재개
+  - `R`: 전적 및 자산 리셋
+  - `Esc`: 종료
