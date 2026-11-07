@@ -18,6 +18,36 @@
             "problemMatcher": []
         },
         {
+            "label": "Love2D: Run My Galaga",
+            "type": "shell",
+            "command": "love",
+            "args": [
+                "${workspaceFolder}/lua_tuto/mvc/week02/my_galaga"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/love-11.5-win64/lovec.exe",
+                "args": [
+                    "${workspaceFolder}/lua_tuto/mvc/week02/my_galaga"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Love2D: Run Galaga (Example)",
+            "type": "shell",
+            "command": "love",
+            "args": [
+                "${workspaceFolder}/lua_tuto/mvc/week02/examples/galaga_monolith"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/love-11.5-win64/lovec.exe",
+                "args": [
+                    "${workspaceFolder}/lua_tuto/mvc/week02/examples/galaga_monolith"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Love2D: Run My Pong",
             "type": "shell",
             "command": "love",

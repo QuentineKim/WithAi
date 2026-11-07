@@ -31,7 +31,7 @@
             "text": "커밋 메시지는 반드시 한국어로 작성하세요. 첫 줄은 Conventional Commits 형식(<타입>: <설명>)을 따르며 50자 이내로 명확하게 요약하세요 (예: feat: ..., fix: ..., refactor: ..., docs: ...). 마침표는 찍지 않습니다. 변경 내용이 많을 경우 빈 줄 하나를 두고 본문에 변경 이유와 세부 사항을 '- ' 형태의 개조식 한국어로 서술하세요."
         }
     ],
-    "git.inputValidation": "warn",
+    "git.inputValidation": true,
     "git.inputValidationLength": 72,
     "git.inputValidationSubjectLength": 50
 }
