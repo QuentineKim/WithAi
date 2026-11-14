@@ -23,13 +23,18 @@ end
 
 function BulletModel:update(dt)
   -- TODO: 속도 × dt 만큼 이동
+  self.x = self.x + self.vx * dt
+  self.y = self.y + self.vy * dt
 end
 
 --- 월드 경계(+margin)를 벗어났는가
 function BulletModel:isOffscreen(width, height, margin)
   margin = margin or 24
   -- TODO: 네 방향 모두 검사 (모놀리식은 위/아래만 봤다 — 왜 부족한가?)
-  return false
+  return self.y + self.h < -margin
+      or self.y > height + margin
+      or self.x + self.w < -margin
+      or self.x > width + margin
 end
 
 return BulletModel

@@ -21,25 +21,35 @@ end
 --- dir(-1|0|1) 방향으로 speed(px/s) 만큼 이동한다.
 function PlayerModel:move(dt, dir, speed)
   -- TODO: love.keyboard 를 읽지 말 것. dir 은 바깥(Controller)이 준다.
+  self.x = self.x + dir * speed * dt
 end
 
 --- x 를 [minX, maxX - w] 범위로 제한한다.
 function PlayerModel:clamp(minX, maxX)
   -- TODO: 모놀리식의 "if player.x < 0 ... elseif player.x > 600 - player.w" 를 옮긴다.
   --       600 같은 매직 넘버 대신 인자를 쓴다.
+  if self.x < minX then
+    self.x = minX
+  elseif self.x > maxX - self.w then
+    self.x = maxX - self.w
+  end
 end
 
 function PlayerModel:tickCooldown(dt)
   -- TODO
+  if self.cooldown > 0 then
+    self.cooldown = self.cooldown - dt
+  end
 end
 
 function PlayerModel:canFire()
   -- TODO
-  return false
+  return self.cooldown <= 0
 end
 
 function PlayerModel:resetCooldown(seconds)
   -- TODO
+  self.cooldown = seconds
 end
 
 return PlayerModel

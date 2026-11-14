@@ -41,6 +41,14 @@ end
 --   그 밖의 이벤트는 조용히 무시한다.
 function EffectsView:onEvent(ev)
   -- TODO
+  if ev.type == "enemy_destroyed" then
+    self:_burst(ev.x, ev.y)
+    self.flash = FLASH_TIME
+  elseif ev.type == "player_hit" then
+    self.shake = SHAKE_TIME
+  elseif ev.type == "formation_cleared" then
+    self.banner = BANNER_TIME
+  end
 end
 
 -- 연출 시간 진행. 흔들림 오프셋도 여기서 정해 draw 는 읽기만 한다.

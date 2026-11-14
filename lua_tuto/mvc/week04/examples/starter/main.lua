@@ -29,6 +29,24 @@ function love.update(dt)
   --   2) M: acc 에 dt 를 더하고, FIXED_DT 단위로 game:update(FIXED_DT, input) 반복
   --   3) M→V: game:drainEvents() 의 각 이벤트를 view:onEvent 로   ← 반복문 "밖"에서 1회
   --   4) V: view:update(dt)
+  if dt > MAX_FRAME_DT then
+    dt = MAX_FRAME_DT
+  end
+
+  local input = controller:read()
+
+  acc = acc + dt
+  while acc >= FIXED_DT do
+    game:update(FIXED_DT, input)
+    acc = acc - FIXED_DT
+  end
+
+  local events = game:drainEvents()
+  for i = 1, #events do
+    view:onEvent(events[i])
+  end
+
+  view:update(dt)
 end
 
 function love.draw()

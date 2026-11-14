@@ -51,6 +51,11 @@ end
 --- 4행 × 8열 편대를 만든다. 위치: x = 60 + col*60, y = 60 + row*50
 function GameModel:spawnFormation()
   -- TODO: EnemyModel(x, y) 를 self.enemies 에 추가
+  for row = 0, 3 do
+    for col = 0, 7 do
+      self.enemies[#self.enemies + 1] = EnemyModel(60 + col * 60, 60 + row * 50)
+    end
+  end
 end
 
 -- 디커플링 ②: 연출을 직접 만들지 않고 "사실"만 기록한다.
@@ -62,7 +67,9 @@ end
 function GameModel:drainEvents()
   -- TODO: 현재 목록을 돌려주고 self.events 는 새 빈 목록으로.
   --       (update 안에서 비우면 왜 안 되는지 README 4절 참고)
-  return {}
+  local out = self.events
+  self.events = {}
+  return out
 end
 
 --- 매 고정 스텝 1회.
@@ -74,15 +81,44 @@ function GameModel:update(dt, input)
     return
   end
 
+  local move = input.move or 0
+  local fire = input.fire or false
+
   -- TODO 1) 플레이어: move → clamp(0, width) → tickCooldown
+  self.player:move(dt, move, PLAYER_SPEED)
+  self.player:clamp(0, self.width)
+  self.player:tickCooldown(dt)
+
   -- TODO 2) fire 이고 canFire 면: 총알 생성(BulletModel, vy = -BULLET_SPEED, 4x12, "player"),
   --         resetCooldown(FIRE_COOLDOWN), "fire" 이벤트
+  if fire and self.player:canFire() then
+    local p = self.player
+    self.bullets[#self.bullets + 1] =
+        BulletModel(p.x + p.w * 0.5 - 2, p.y, 0, -BULLET_SPEED, 4, 12, "player")
+    self.player:resetCooldown(FIRE_COOLDOWN)
+    self:_emit({ type = "fire" })
+  end
+
   -- TODO 3) 플레이어 총알 이동 + 화면 밖 제거 (뒤에서부터 순회)
+  for i = #self.bullets, 1, -1 do
+    local b = self.bullets[i]
+    b:update(dt)
+    if b:isOffscreen(self.width, self.height) then
+      table.remove(self.bullets, i)
+    end
+  end
 
   self:_updateFormation(dt)
   self:_updateEnemyFire(dt)
 
   -- TODO 4) 적 총알 이동 + 화면 밖 제거
+  for i = #self.enemyBullets, 1, -1 do
+    local b = self.enemyBullets[i]
+    b:update(dt)
+    if b:isOffscreen(self.width, self.height) then
+      table.remove(self.enemyBullets, i)
+    end
+  end
 
   self:_resolveCollisions()
   self:_respawnIfCleared()
@@ -92,24 +128,95 @@ function GameModel:_updateFormation(dt)
   -- TODO: 살아있는 적의 좌우 끝(minx, maxx)을 구하고,
   --       경계(10, width-10)에 닿으면 방향 반전 + FORMATION_DESCEND 만큼 하강,
   --       아니면 formationDir * FORMATION_SPEED * dt 만큼 수평 이동
+  local minx, maxx = math.huge, -math.huge
+  for _, e in ipairs(self.enemies) do
+    if e.alive then
+      minx = math.min(minx, e.x)
+      maxx = math.max(maxx, e.x + e.w)
+    end
+  end
+  if minx == math.huge then
+    return
+  end
+  local dx = self.formationDir * FORMATION_SPEED * dt
+  if maxx + dx > self.width - 10 or minx + dx < 10 then
+    self.formationDir = -self.formationDir
+    for _, e in ipairs(self.enemies) do
+      e.y = e.y + FORMATION_DESCEND
+    end
+  else
+    for _, e in ipairs(self.enemies) do
+      e.x = e.x + dx
+    end
+  end
 end
 
 function GameModel:_updateEnemyFire(dt)
   -- TODO: 타이머가 0 이하가 되면 ENEMY_FIRE_INTERVAL 로 되돌리고,
   --       살아있는 적 중 self.rng:range(n) 으로 하나를 골라 아래로 쏜다.
   --       ⚠️ math.random 을 쓰면 결정성 테스트가 실패한다.
+  self.enemyFireTimer = self.enemyFireTimer - dt
+  if self.enemyFireTimer > 0 then
+    return
+  end
+  self.enemyFireTimer = ENEMY_FIRE_INTERVAL
+
+  local alive = {}
+  for _, e in ipairs(self.enemies) do
+    if e.alive then
+      alive[#alive + 1] = e
+    end
+  end
+  if #alive == 0 then
+    return
+  end
+  local e = alive[self.rng:range(#alive)]
+  self.enemyBullets[#self.enemyBullets + 1] =
+      BulletModel(e:centerX() - 2, e.y + e.h, 0, ENEMY_BULLET_SPEED, 4, 12, "enemy")
 end
 
 function GameModel:_resolveCollisions()
   -- TODO a) 플레이어 총알 × 적: 적 사망, score +100,
   --         "enemy_destroyed"{x=중심x, y=중심y}, 총알 제거
+  for bi = #self.bullets, 1, -1 do
+    local b = self.bullets[bi]
+    for _, e in ipairs(self.enemies) do
+      if e.alive and overlaps(b, e) then
+        e.alive = false
+        self.score = self.score + 100
+        self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+        table.remove(self.bullets, bi)
+        break
+      end
+    end
+  end
+
   -- TODO b) 적 총알 × 플레이어: 총알 제거, lives -1, "player_hit",
   --         lives <= 0 이면 state = "gameover" + "game_over"
   --         (판정은 위에 정의된 overlaps(a, b) 사용)
+  for i = #self.enemyBullets, 1, -1 do
+    if overlaps(self.enemyBullets[i], self.player) then
+      table.remove(self.enemyBullets, i)
+      self.lives = self.lives - 1
+      self:_emit({ type = "player_hit" })
+      if self.lives <= 0 then
+        self.state = "gameover"
+        self:_emit({ type = "game_over" })
+      end
+    end
+  end
 end
 
 function GameModel:_respawnIfCleared()
   -- TODO: 살아있는 적이 없으면 편대를 새로 만들고 "formation_cleared"
+  for _, e in ipairs(self.enemies) do
+    if e.alive then
+      return
+    end
+  end
+  self.enemies = {}
+  self:spawnFormation()
+  self:_emit({ type = "formation_cleared" })
 end
 
 return GameModel

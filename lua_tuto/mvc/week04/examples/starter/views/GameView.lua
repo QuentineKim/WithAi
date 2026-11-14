@@ -34,6 +34,18 @@ function GameView:draw(gfx, game)
   --   2) 번쩍임 → 플레이어 → 적 → 총알 → 파티클
   --   3) gfx.pop()                                     ← push/pop 짝이 맞아야 한다
   --   4) HUD → 배너                                    ← HUD 는 흔들리지 않는다
+  local fx = self.effects
+  gfx.push()
+  gfx.translate(fx.ox, fx.oy)
+  fx:drawFlash(gfx, self.width, self.height)
+  PlayerView.draw(gfx, game.player)
+  EnemyView.draw(gfx, game.enemies)
+  BulletView.draw(gfx, game.bullets, game.enemyBullets)
+  fx:drawParticles(gfx)
+  gfx.pop()
+
+  HudView.draw(gfx, game, self.width, self.height)
+  fx:drawBanner(gfx, self.width, self.height)
 end
 
 return GameView

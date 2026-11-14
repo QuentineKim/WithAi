@@ -8,6 +8,12 @@ function HudView.draw(gfx, game, width, height)
   -- TODO: gfx.print("SCORE " .. game.score, 10, 10)
   --       gfx.print("LIVES " .. game.lives, width - 100, 10)
   --       state == "gameover" 이면 가운데에 "GAME OVER\nPress R" (gfx.printf)
+  gfx.setColor(1, 1, 1)
+  gfx.print("SCORE " .. game.score, 10, 10)
+  gfx.print("LIVES " .. game.lives, width - 100, 10)
+  if game.state == "gameover" then
+    gfx.printf("GAME OVER\nPress R", 0, height * 0.475, width, "center")
+  end
 end
 
 return HudView
