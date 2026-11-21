@@ -43,4 +43,12 @@ function PlayerModel:isDead()
   return self.hp <= 0
 end
 
+function PlayerModel:spendGold(amount)
+  if self.gold < amount then
+    return false, "골드가 부족합니다"
+  end
+  self.gold = self.gold - amount
+  return true
+end
+
 return PlayerModel

@@ -18,6 +18,8 @@ local InventoryModel = require("models.inventory_model")
 local DungeonModel = require("models.dungeon_model")
 local QuestModel = require("models.quest_model")
 local LogModel = require("models.log_model")
+local KillListModel = require("models.kill_list_model")
+local AchievementModel = require("models.achievement_model")
 
 local GameModel = {}
 GameModel.__index = GameModel
@@ -28,12 +30,23 @@ function GameModel.new(data)
   self.bus = EventBus.new()
   self.log = LogModel.new(self.bus, data.logLimit)
   self.quests = QuestModel.new(self.bus, data.quests)
+  self.killList = KillListModel.new(self.bus)
+  self.achievements = AchievementModel.new(self.bus, data.goldAchievementGoal)
   self.player = PlayerModel.new(data.player)
   self.inventory = InventoryModel.new(data.inventoryCapacity)
   self.dungeon = DungeonModel.new(data.rooms)
   self.enemy = nil
+  self.shopRoom = nil
   self.mode = "explore"
   self.returnMode = nil
+  self.bus:on("room_entered", function(ev)
+    local room = ev and ev.index and self.dungeon.rooms[ev.index]
+    if room and room.kind == "shop" then
+      self.mode = "shop"
+      self.shopRoom = room
+      self.bus:emit("shop_entered", { price = room.price or 5 })
+    end
+  end)
   return self
 end
 
@@ -172,6 +185,51 @@ function GameModel:useItem(index)
   if self.mode == "battle" then
     self:enemyTurn()
   end
+  return true
+end
+
+-- ── 상점 ───────────────────────────────────────────────────────────────────
+local DEFAULT_SHOP_PRICE = 5
+local DEFAULT_SHOP_ITEM = { name = "회복 물약", kind = "potion", power = 10 }
+
+function GameModel:buyPotion()
+  local ok, err = requireMode(self, "shop")
+  if not ok then
+    return false, err
+  end
+  local room = self.shopRoom or {}
+  local price = room.price or DEFAULT_SHOP_PRICE
+  local item = room.item or DEFAULT_SHOP_ITEM
+
+  if self.player.gold < price then
+    return false, "골드가 부족합니다"
+  end
+  if self.inventory:isFull() then
+    return false, "가방이 가득 찼습니다"
+  end
+
+  local spent, spendErr = self.player:spendGold(price)
+  if not spent then
+    return false, spendErr
+  end
+  local added, addErr = self.inventory:add(item)
+  if not added then
+    self.player:addGold(price)
+    return false, addErr
+  end
+
+  self.bus:emit("item_bought", { name = item.name, price = price })
+  return true
+end
+
+function GameModel:leaveShop()
+  local ok, err = requireMode(self, "shop")
+  if not ok then
+    return false, err
+  end
+  self.shopRoom = nil
+  self.mode = "explore"
+  self.bus:emit("shop_left", {})
   return true
 end
 
