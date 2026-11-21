@@ -6,22 +6,32 @@ local here = (arg and arg[0] or ""):match("(.*[/\\])") or "./"
 local root = here .. "../06_dungeon/"
 package.path = root .. "?.lua;" .. package.path
 
+local initialGlobals = {}
+for k in pairs(_G) do
+  initialGlobals[k] = true
+end
+
 local EventBus = require("models.event_bus")
 local QuestModel = require("models.quest_model")
 local LogModel = require("models.log_model")
+local KillListModel = require("models.kill_list_model")
+local AchievementModel = require("models.achievement_model")
 local InventoryModel = require("models.inventory_model")
 local PlayerModel = require("models.player_model")
 local GameModel = require("models.game_model")
+local dungeonData = require("data.dungeon_data")
 
 local ScreenView = require("views.screen_view")
 local StatusView = require("views.status_view")
 local EnemyView = require("views.enemy_view")
+local KillListView = require("views.kill_list_view")
 local LogView = require("views.log_view")
 
 local InputRouter = require("controllers.input_router")
 local ExploreController = require("controllers.explore_controller")
 local BattleController = require("controllers.battle_controller")
 local InventoryController = require("controllers.inventory_controller")
+local ShopController = require("controllers.shop_controller")
 local EndController = require("controllers.end_controller")
 
 local passed, failed = 0, 0
@@ -66,10 +76,11 @@ print("[0] 디커플링: Model/Controller 에 print·io·love 없음")
 local CHECKED_FILES = {
   "models/event_bus.lua", "models/player_model.lua", "models/enemy_model.lua",
   "models/inventory_model.lua", "models/dungeon_model.lua", "models/quest_model.lua",
-  "models/log_model.lua", "models/game_model.lua",
+  "models/log_model.lua", "models/kill_list_model.lua", "models/achievement_model.lua",
+  "models/game_model.lua",
   "controllers/explore_controller.lua", "controllers/battle_controller.lua",
-  "controllers/inventory_controller.lua", "controllers/end_controller.lua",
-  "controllers/input_router.lua",
+  "controllers/inventory_controller.lua", "controllers/shop_controller.lua",
+  "controllers/end_controller.lua", "controllers/input_router.lua",
 }
 for _, path in ipairs(CHECKED_FILES) do
   local file = assert(io.open(root .. path, "r"), "파일 없음: " .. path)
@@ -82,6 +93,25 @@ for _, path in ipairs(CHECKED_FILES) do
   end
   file:close()
   check(path, clean)
+end
+
+do
+  local file = assert(io.open(root .. "models/achievement_model.lua", "r"))
+  local content = file:read("*a")
+  file:close()
+  local hasForbiddenDep = content:find("GameModel", 1, true) or content:find("PlayerModel", 1, true)
+      or content:find("game_model", 1, true) or content:find("player_model", 1, true)
+  check("AchievementModel: GameModel·PlayerModel 의존 없음", not hasForbiddenDep)
+end
+
+do
+  local leaked = {}
+  for k in pairs(_G) do
+    if not initialGlobals[k] then
+      leaked[#leaked + 1] = tostring(k)
+    end
+  end
+  check("전역 변수 오염 없음 (로드 시점)", #leaked == 0)
 end
 
 -- ── 1. 작은 Model 들 (단독) ─────────────────────────────────────────────────
@@ -247,6 +277,159 @@ do
   check("승리 후 아무 입력 → 종료", router:handle("x") == false)
   check("입력마다 render 호출", renders == 7)
   check("q 는 어느 모드에서나 종료", InputRouter.new(newGame({ EXIT }), fakeView, {}):handle("q") == false)
+end
+
+-- ── 5. MVC 퀴즈 확장 기능 ─────────────────────────────────────────────────
+print("[5] MVC 퀴즈 확장 기능")
+do
+  local foundItemQuest = nil
+  for _, q in ipairs(dungeonData.quests or {}) do
+    if q.event == "item_used" and q.needed == 2 then
+      foundItemQuest = q
+    end
+  end
+  check("문제1: dungeon_data.lua 에 아이템 2번 사용 퀘스트 정의", foundItemQuest ~= nil)
+
+  local g = GameModel.new(dungeonData)
+  g:explore() -- 1번: 슬라임
+  g:attack()
+  g:attack()
+  g:explore()  -- 2번: 회복 물약
+  g:explore()  -- 3번: 고블린
+  g:openInventory()
+  g:useItem(1) -- 1번째 사용 (물약)
+  g:attack()
+  g:attack()
+  g:attack()
+  g:attack()
+  g:explore()  -- 4번: 철검
+  g:openInventory()
+  g:useItem(1) -- 2번째 사용 (철검)
+  local itemQuest = nil
+  for _, q in ipairs(g.quests.quests) do
+    if q.event == "item_used" then
+      itemQuest = q
+    end
+  end
+  check("문제1: 데이터 퀘스트 아이템 2번 사용 시 완료", itemQuest and itemQuest.done == true and itemQuest.progress == 2)
+end
+
+do
+  local bus = EventBus.new()
+  local kl = KillListModel.new(bus)
+  check("문제2: 처치 전 KillListView 는 (없음) 표시", contains(KillListView.new():lines({ killList = kl }), "(없음)"))
+  bus:emit("enemy_killed", { name = "슬라임", gold = 3 })
+  bus:emit("enemy_killed", { name = "고블린", gold = 5 })
+  check("문제2: KillListModel 단독 이벤트 기록", kl:count() == 2 and kl.kills[1] == "슬라임" and kl.kills[2] == "고블린")
+  local viewLines = KillListView.new():lines({ killList = kl })
+  check("문제2: KillListView 처치 목록 및 총 마릿수 표시", contains(viewLines, "슬라임, 고블린") and contains(viewLines, "총 2마리"))
+
+  local g = newGame({ WEAK, EXIT })
+  g:explore()
+  g:attack()
+  check("문제2: GameModel 전투 처치 후 KillListView 반영", contains(KillListView.new():lines(g), "쥐"))
+end
+
+do
+  local bus = EventBus.new()
+  local unlockedEvents = {}
+  bus:on("achievement_unlocked", function(d)
+    unlockedEvents[#unlockedEvents + 1] = d
+  end)
+  local ach = AchievementModel.new(bus, 15)
+  bus:emit("enemy_killed", { name = "슬라임", gold = 10 })
+  bus:emit("enemy_killed", { name = "박쥐", gold = 4 })
+  check("문제3: 누적 골드 14 에서는 업적 미발행", not ach.unlocked and #unlockedEvents == 0)
+  bus:emit("enemy_killed", { name = "쥐", gold = 1 })
+  check("문제3: 누적 골드 15 도달 시 업적 1회 발행", ach.unlocked and #unlockedEvents == 1)
+  bus:emit("enemy_killed", { name = "드래곤", gold = 20 })
+  check("문제3: 추가 처치 시 중복 발행 안 됨", #unlockedEvents == 1)
+
+  local g = GameModel.new({
+    player = { name = "테스터", maxHp = 30, attack = 10 },
+    inventoryCapacity = 2,
+    logLimit = 5,
+    goldAchievementGoal = 15,
+    rooms = {
+      { kind = "enemy", enemy = { name = "오크A", hp = 10, attack = 1, gold = 8 } },
+      { kind = "enemy", enemy = { name = "오크B", hp = 10, attack = 1, gold = 7 } },
+      EXIT,
+    },
+    quests = {},
+  })
+  g:explore()
+  g:attack()
+  g:explore()
+  g:attack()
+  local logLines = LogView.new():lines(g)
+  check("문제3: GameModel 처치 골드 15 달성 시 로그 업적 표시", contains(logLines, "업적 달성"))
+end
+
+do
+  local rooms = dungeonData.rooms
+  check("문제4: dungeon_data.lua 출구 직전 방이 shop", rooms[#rooms].kind == "exit" and rooms[#rooms - 1].kind == "shop")
+
+  local SHOP_DEFAULT = { kind = "shop" }
+  local gPoor = newGame({ SHOP_DEFAULT, EXIT })
+  gPoor:explore()
+  check("문제4: 상점 방 진입 시 shop 모드 전환", gPoor.mode == "shop")
+  local okPoor, errPoor = gPoor:buyPotion()
+  check("문제4: 골드 부족 시 구매 실패 및 이유 반환", not okPoor and errPoor and errPoor:find("골드", 1, true) ~= nil)
+  check("문제4: 골드 부족 실패 시 가방 변화 없음", #gPoor.inventory.items == 0 and gPoor.player.gold == 0)
+
+  local STRONG_GOLD = { kind = "enemy", enemy = { name = "황금쥐", hp = 5, attack = 1, gold = 12 } }
+  local g = newGame({ STRONG_GOLD, SHOP_DEFAULT, EXIT })
+  g:explore()
+  g:attack()  -- gold = 12
+  g:explore() -- shop 진입
+  local okBuy = g:buyPotion()
+  check("문제4: 물약 구매 성공 (골드 5 차감, 가방 추가)", okBuy and g.player.gold == 7 and #g.inventory.items == 1)
+  local okBuy2 = g:buyPotion()
+  check("문제4: 2번째 물약 구매 성공 (가방 2/2)", okBuy2 and g.player.gold == 2 and #g.inventory.items == 2)
+  g.player:addGold(10) -- gold = 12
+  local okFull, errFull = g:buyPotion()
+  check("문제4: 가방 가득 시 구매 실패 및 이유 반환", not okFull and errFull and errFull:find("가방", 1, true) ~= nil)
+  check("문제4: 가방 가득 실패 시 골드 미차감", g.player.gold == 12)
+
+  local notices = {}
+  local fakeView = {
+    showNotice = function(_, msg)
+      notices[#notices + 1] = msg
+    end,
+    render = function() end,
+  }
+  local endCtrl = EndController.new()
+  local gCtrl = newGame({ STRONG_GOLD, SHOP_DEFAULT, EXIT })
+  local router = InputRouter.new(gCtrl, fakeView, {
+    explore = ExploreController.new(),
+    battle = BattleController.new(),
+    inventory = InventoryController.new(),
+    shop = ShopController.new(),
+    gameover = endCtrl,
+    victory = endCtrl,
+  })
+  router:handle("n")
+  router:handle("a")
+  router:handle("n")
+  check("문제4: 라우터로 상점 진입", gCtrl.mode == "shop")
+  router:handle("x")
+  check("문제4: 상점 잘못된 입력 시 안내 메시지", #notices > 0 and notices[#notices]:find("b / l", 1, true) ~= nil)
+  router:handle("b")
+  check("문제4: ShopController b 입력으로 물약 구매", gCtrl.player.gold == 7 and #gCtrl.inventory.items == 1)
+  router:handle("l")
+  check("문제4: ShopController l 입력으로 탐험 복귀", gCtrl.mode == "explore")
+  router:handle("n")
+  check("문제4: 상점 나간 뒤 다음 방 출구 승리", gCtrl.mode == "victory")
+end
+
+do
+  local leaked = {}
+  for k in pairs(_G) do
+    if not initialGlobals[k] then
+      leaked[#leaked + 1] = tostring(k)
+    end
+  end
+  check("전역 변수 오염 없음 (실행 종료 시점)", #leaked == 0)
 end
 
 print(string.format("\n결과: %d 통과, %d 실패", passed, failed))

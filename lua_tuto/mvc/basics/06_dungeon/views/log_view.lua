@@ -42,6 +42,18 @@ local FORMAT = {
   dungeon_cleared = function(d)
     return string.format("출구를 찾았다! 총 골드 %d", d.gold)
   end,
+  achievement_unlocked = function(d)
+    return "★ 업적 달성: " .. d.text
+  end,
+  shop_entered = function(d)
+    return string.format("상점에 들어섰다. (회복 물약 %d골드)", d.price or 5)
+  end,
+  item_bought = function(d)
+    return string.format("%s 을(를) %d골드에 구매했다.", d.name, d.price)
+  end,
+  shop_left = function()
+    return "상점을 나왔다."
+  end,
 }
 
 local LogView = { title = "기록" }
