@@ -1,10 +1,10 @@
 -- phase_test.lua
 -- 진행 단계 State(FormationPhase / BossPhase)를 창 없이 검사한다.
--- 실행: cd lua_tuto/mvc/week05/examples/tests && luajit phase_test.lua [galaga_states|starter]
+-- 실행: cd project/tests && lua phase_test.lua [src]
 
-package.path = ((arg[0] or ""):match("(.*/)") or "./") .. "?.lua;" .. package.path
+package.path = ((arg[0] or ""):match("(.*[/\\])") or "./") .. "?.lua;" .. package.path
 local h = require("helper")
-local app = arg[1] or "galaga_states"
+local app = arg[1] or "src"
 local root = h.setup(app)
 
 local GameModel = require("GameModel")

@@ -26,7 +26,7 @@
 | 클로저 + 업밸류 상태 캡처 | `project/src/main.lua:12-18` | `games` 카운터를 전역 변수로 노출하지 않고 `newSeed` 함수 내부에 캡슐화해 1초 이내 재도전 시에도 시드가 중복되지 않게 유지 |
 | `table.concat` 문자열 결합 | `project/src/views/HelpView.lua:6-12` | 여러 줄 안내 문구를 `..` 연산자로 반복 연결하는 대신 배열에 담아 `table.concat`으로 한 번에 결합해 중간 문자열 생성 비용과 가독성 저하를 방지 |
 | 역순 `for i = #t, 1, -1` + `table.remove` | `project/src/models/GameModel.lua:129-135` | 순회 중 `table.remove`로 원소를 지울 때 정방향 루프(`1..#t`)를 쓰면 다음 원소 인덱스가 밀려 건너뛰는 버그가 발생하므로 역순 순회를 사용 |
-| `ipairs` vs `pairs` 선택 | `project/src/models/GameModel.lua:157`, `project/tests/layer_check.lua:61` | 배열(`enemies`, `bullets`)은 순서 보장을 위해 `ipairs`, 문자열 키 딕셔너리(`RULES`)는 모든 키 순회를 위해 `pairs`를 구분해 사용 |
+| `ipairs` vs `pairs` 선택 | `project/src/models/GameModel.lua:157`, `project/tests/layer_check.lua:63` | 배열(`enemies`, `bullets`)은 순서 보장을 위해 `ipairs`, 문자열 키 딕셔너리(`RULES`)는 모든 키 순회를 위해 `pairs`를 구분해 사용 |
 | `pcall` 보호 호출 | `project/tests/helper.lua:27` | 테스트 함수 내부에서 `error()`가 발생해도 전체 테스트 러너가 중간에 멈추지 않고 실패 사유를 포착해 나머지 테스트를 계속 집계하기 위해 사용 |
 
 ---

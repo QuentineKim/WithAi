@@ -1,10 +1,10 @@
 -- scene_test.lua
 -- SceneStack 과 씬 전환을 창 없이 검사한다. 키 입력은 stack:keypressed, 누르고 있는 키는 ctx.held.
--- 실행: cd lua_tuto/mvc/week05/examples/tests && luajit scene_test.lua [galaga_states|starter]
+-- 실행: cd project/tests && lua scene_test.lua [src]
 
-package.path = ((arg[0] or ""):match("(.*/)") or "./") .. "?.lua;" .. package.path
+package.path = ((arg[0] or ""):match("(.*[/\\])") or "./") .. "?.lua;" .. package.path
 local h = require("helper")
-local app = arg[1] or "galaga_states"
+local app = arg[1] or "src"
 h.setup(app)
 
 local SceneStack = require("SceneStack")
@@ -243,24 +243,29 @@ h.test("타이틀: H → 도움말 씬 push (스택 2개, 불투명)", function(
   return stack:size() == 2 and stack:top().transparent == false
 end)
 
-h.test("도움말 화면: Title 문구 없이 조작법만 그린다", function()
+h.test("도움말 화면: Title 문구 없이 조작법과 H / Esc / Enter 안내를 그린다", function()
   local stack = newApp()
   stack:keypressed("h")
   local gfx = h.fakeGfx()
   stack:draw(gfx)
-  return printed(gfx, "HOW TO PLAY") and not printed(gfx, "GALAGA")
+  return printed(gfx, "HOW TO PLAY") and printed(gfx, "H / Esc / Enter : BACK") and not printed(gfx, "GALAGA")
 end)
 
-h.test("도움말: Esc 또는 H → pop 으로 원래 타이틀 인스턴스 복귀", function()
+h.test("도움말: Esc / H / Enter 로 복귀하고 다른 키(Space)는 무시한다", function()
   local stack = newApp()
   local title = stack:top()
   stack:keypressed("h")
+  stack:keypressed("space")
+  local stayedOnSpace = stack:size() == 2
   stack:keypressed("escape")
   local backByEsc = stack:size() == 1 and stack:top() == title
   stack:keypressed("h")
   stack:keypressed("h")
   local backByH = stack:size() == 1 and stack:top() == title
-  return backByEsc and backByH
+  stack:keypressed("h")
+  stack:keypressed("return")
+  local backByEnter = stack:size() == 1 and stack:top() == title
+  return stayedOnSpace and backByEsc and backByH and backByEnter
 end)
 
 h.finish()

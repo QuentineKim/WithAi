@@ -4,10 +4,10 @@
 --   views/       : love 금지(주입받은 gfx 만), Controller require 금지
 --   controllers/ : love 금지(주입받은 isDown 만, 종료는 main), View·Scene require 금지
 --   scenes/      : love 금지(ctx 로만 받는다), 다른 Scene require 금지(ctx.scenes 사용)
--- 실행: cd lua_tuto/mvc/week05/examples/tests && luajit layer_check.lua [galaga_states|starter]
+-- 실행: cd project/tests && lua layer_check.lua [src]
 
-local here = (arg[0] or ""):match("(.*/)") or "./"
-local app = arg[1] or "galaga_states"
+local here = (arg[0] or ""):match("(.*[/\\])") or "./"
+local app = arg[1] or "src"
 local root = here .. "../" .. app .. "/"
 
 local RULES = {
@@ -17,10 +17,12 @@ local RULES = {
     { pattern = "[^%w_]love[^%w_]", why = "love" },
     { pattern = "require%s*%(?%s*[\"'][%w_]*View[\"']", why = "View require" },
     { pattern = "require%s*%(?%s*[\"'][%w_]*Controller[\"']", why = "Controller require" },
+    { pattern = "require%s*%(?%s*[\"'][%w_]*Scene[\"']", why = "Scene require" },
   },
   views = {
     { pattern = "[^%w_]love[^%w_]", why = "love (View 는 주입받은 gfx 만 쓴다)" },
     { pattern = "require%s*%(?%s*[\"'][%w_]*Controller[\"']", why = "Controller require" },
+    { pattern = "require%s*%(?%s*[\"'][%w_]*Scene[\"']", why = "Scene require" },
   },
   controllers = {
     { pattern = "[^%w_]love[^%w_]", why = "love (Controller 는 주입받은 isDown 만 쓴다, 종료는 main)" },

@@ -7,7 +7,7 @@ local helper = {}
 --- 테스트 대상 앱 폴더를 require 경로에 등록한다.
 -- main.lua 의 love.filesystem.setRequirePath 와 같은 규칙을 package.path 로 흉내 낸다.
 function helper.setup(appName)
-  local here = (arg[0] or ""):match("(.*/)") or "./"
+  local here = (arg[0] or ""):match("(.*[/\\])") or "./"
   local root = here .. "../" .. appName .. "/"
   package.path = table.concat({
     root .. "models/?.lua",

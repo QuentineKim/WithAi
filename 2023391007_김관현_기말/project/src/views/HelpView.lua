@@ -17,7 +17,7 @@ function HelpView.draw(gfx, width, height)
   gfx.setColor(1, 1, 1)
   gfx.printf(HELP_BODY, 0, height * 0.36, width, "center")
   gfx.setColor(0.7, 0.85, 1)
-  gfx.printf("H / Esc : BACK", 0, height * 0.68, width, "center")
+  gfx.printf("H / Esc / Enter : BACK", 0, height * 0.68, width, "center")
 end
 
 return HelpView
