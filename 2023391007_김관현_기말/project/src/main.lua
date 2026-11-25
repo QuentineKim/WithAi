@@ -7,6 +7,7 @@
 love.filesystem.setRequirePath("?.lua;?/init.lua;models/?.lua;views/?.lua;controllers/?.lua;scenes/?.lua")
 
 local SceneStack = require("SceneStack")
+local WaveParser = require("WaveParser")
 
 local stack
 local games = 0
@@ -20,6 +21,12 @@ end
 function love.load()
   love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
 
+  local waveText, readErr = love.filesystem.read("waves.txt")
+  if not waveText then
+    error("waves.txt 를 읽을 수 없습니다: " .. tostring(readErr))
+  end
+  local waves = WaveParser.parse(waveText)
+
   -- 씬끼리 서로 require 하면 순환이 생긴다(Title→Play→Result→Title). 목록을 여기서 한 번 주입한다.
   local ctx = {
     width = 600,
@@ -27,6 +34,7 @@ function love.load()
     isDown = love.keyboard.isDown,
     seed = newSeed,
     quit = love.event.quit,
+    waves = waves,
     scenes = {
       Title = require("TitleScene"),
       Help = require("HelpScene"),

@@ -1,0 +1,55 @@
+# MVC 겔러그 웨이브 데이터 (형식: docs/waves_format.md)
+
+# 웨이브 1: 3x6 기본 편대
+wave 1
+spawn basic 90 60
+spawn basic 160 60
+spawn basic 230 60
+spawn basic 300 60
+spawn basic 370 60
+spawn basic 440 60
+spawn basic 90 110
+spawn basic 160 110
+spawn basic 230 110
+spawn basic 300 110
+spawn basic 370 110
+spawn basic 440 110
+spawn basic 90 160
+spawn basic 160 160
+spawn basic 230 160
+spawn basic 300 160
+spawn basic 370 160
+spawn basic 440 160
+
+# 웨이브 2: V자 편대
+wave 2
+spawn basic 60 60
+spawn basic 480 60
+spawn basic 120 100
+spawn basic 420 100
+spawn basic 180 140
+spawn basic 360 140
+spawn basic 240 180
+spawn basic 300 180
+spawn basic 180 60
+spawn basic 240 60
+spawn basic 300 60
+spawn basic 360 60
+
+# 웨이브 3: 2열 집중 편대
+wave 3
+spawn basic 70 70
+spawn basic 130 70
+spawn basic 190 70
+spawn basic 250 70
+spawn basic 310 70
+spawn basic 370 70
+spawn basic 430 70
+spawn basic 490 70
+spawn basic 100 130
+spawn basic 160 130
+spawn basic 220 130
+spawn basic 280 130
+spawn basic 340 130
+spawn basic 400 130
+spawn basic 460 130

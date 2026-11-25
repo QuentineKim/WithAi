@@ -8,12 +8,14 @@ local EnemyModel = class()
 --- 적 상태
 -- @field x,y   number  좌상단 좌표
 -- @field w,h   number  크기
+-- @field kind  string  적 종류 (기본 "basic")
 -- @field alive boolean 생존 여부
-function EnemyModel:init(x, y)
+function EnemyModel:init(x, y, kind)
   self.x = x
   self.y = y
   self.w = 36
   self.h = 28
+  self.kind = kind or "basic"
   self.alive = true
 end
 

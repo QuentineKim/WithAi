@@ -1,6 +1,6 @@
 # MVC 겔러그 기말 프로젝트 (`2023391007_김관현_기말`)
 
-> 현재 상태: R1(도움말 씬 `HelpScene` 추가) 구현 및 테스트 통과 (R2~R7 미구현)
+> 현재 상태: R1(도움말 씬 `HelpScene`) + R2(웨이브 데이터 `waves.txt` · `WaveParser`) 구현 및 테스트 통과 (R3~R7 미구현)
 
 ## 1. 출발 코드
 - **선택 B (공개 완성본)**: `lua_tuto/mvc/week05/examples/galaga_states`
@@ -13,20 +13,21 @@
   README.md
   run.bat / run.sh
   project/
-    src/      ← main.lua, conf.lua, models/, views/, controllers/, scenes/
-    tests/    ← helper.lua, layer_check.lua, phase_test.lua, scene_test.lua
-  docs/       ← report_게임시스템설계.md, report_게임인공지능.md (waves_format.md·git_log.txt 추후 추가)
-  worklogs/   ← 001_2026-11-21_baseline_r1.md (세션별 로그 및 최종 회고)
+    src/      ← main.lua, conf.lua, waves.txt, models/, views/, controllers/, scenes/
+    tests/    ← helper.lua, layer_check.lua, phase_test.lua, scene_test.lua, wave_parser_test.lua
+  docs/       ← waves_format.md, report_게임시스템설계.md, report_게임인공지능.md (git_log.txt 추후 추가)
+  worklogs/   ← 001~003 세션별 로그 (최종 회고 추후 추가)
 ```
 
 ## 3. 테스트 및 정적 검사 실행
-헤드리스 테스트 및 계층 검사는 현재 환경에 설치된 **Lua 5.1.5 (`lua`)** 로 실행합니다 (`luajit` 대신 `lua` 사용). 기본 대상이 `src`이므로 인자 없이 실행하거나 VS Code task **`Lua: Run current file`**로도 바로 실행할 수 있습니다.
+헤드리스 테스트 및 계층 검사는 현재 환경에 설치된 **`lua`** 로 실행합니다 (`luajit` 대신 `lua` 사용). 기본 대상이 `src`이므로 인자 없이 실행하거나 VS Code task **`Lua: Run current file`**로도 바로 실행할 수 있습니다.
 
 ```sh
 cd project/tests
 lua layer_check.lua src
 lua phase_test.lua src
 lua scene_test.lua src
+lua wave_parser_test.lua src
 ```
 
 ## 4. 게임 실행 방법

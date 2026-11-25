@@ -1,7 +1,7 @@
-# [게임시스템설계(2A)] 기말과제 보고서 (초안: 기준선 + R1)
+# [게임시스템설계(2A)] 기말과제 보고서 (초안: 기준선 + R1 + R2)
 
 - **출발 코드**: 선택 B — `lua_tuto/mvc/week05/examples/galaga_states`
-- **현재 진행 상태**: 기준선 세팅 및 R1(`HelpScene`) 완료 (R2~R7 구현 후 보완 예정)
+- **현재 진행 상태**: 기준선 세팅, R1(`HelpScene`), R2(`WaveParser` · `waves.txt`) 완료 (R3~R7 구현 후 보완 예정)
 
 ---
 
@@ -9,9 +9,10 @@
 
 | 파일 / 기능 | 출처 | 수정 정도 |
 |---|---|---|
-| `project/src/` 기본 MVC 겔러그 코드 (`models/`, `views/`, `controllers/`, `scenes/`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | `main.lua`, `TitleScene.lua`, `TitleView.lua`에 R1 연결부 추가, 나머지 무수정 |
+| `project/src/` 기본 MVC 겔러그 코드 (`models/`, `views/`, `controllers/`, `scenes/`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | `main.lua`, `TitleScene.lua`, `TitleView.lua`에 R1 연결부, `main.lua`, `PlayScene.lua`, `GameModel.lua`, `EnemyModel.lua`에 R2 웨이브 연동부 추가 |
 | `project/tests/helper.lua`, `layer_check.lua`, `phase_test.lua`, `scene_test.lua` | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/tests`) | `helper.lua`·`scene_test.lua`에 R1 검증 테스트 3건 추가 (`equivalence_test.lua` 제외) |
 | `project/src/scenes/HelpScene.lua`, `project/src/views/HelpView.lua` | AI 협업 작성 (R1 신규) | 신규 작성 |
+| `docs/waves_format.md`, `project/src/waves.txt`, `project/src/models/WaveParser.lua`, `project/tests/wave_parser_test.lua` | AI 협업 작성 (R2 신규) | 신규 작성 |
 
 ---
 
@@ -27,18 +28,22 @@
 | `table.concat` 문자열 결합 | `project/src/views/HelpView.lua:6-12` | 여러 줄 안내 문구를 `..` 연산자로 반복 연결하는 대신 배열에 담아 `table.concat`으로 한 번에 결합해 중간 문자열 생성 비용과 가독성 저하를 방지 |
 | 역순 `for i = #t, 1, -1` + `table.remove` | `project/src/models/GameModel.lua:129-135` | 순회 중 `table.remove`로 원소를 지울 때 정방향 루프(`1..#t`)를 쓰면 다음 원소 인덱스가 밀려 건너뛰는 버그가 발생하므로 역순 순회를 사용 |
 | `ipairs` vs `pairs` 선택 | `project/src/models/GameModel.lua:157`, `project/tests/layer_check.lua:63` | 배열(`enemies`, `bullets`)은 순서 보장을 위해 `ipairs`, 문자열 키 딕셔너리(`RULES`)는 모든 키 순회를 위해 `pairs`를 구분해 사용 |
-| `pcall` 보호 호출 | `project/tests/helper.lua:27` | 테스트 함수 내부에서 `error()`가 발생해도 전체 테스트 러너가 중간에 멈추지 않고 실패 사유를 포착해 나머지 테스트를 계속 집계하기 위해 사용 |
+| `pcall` 보호 호출 | `project/tests/helper.lua:27`, `project/tests/wave_parser_test.lua:17` | 테스트 함수와 파서 오류 검증에서 `error()`가 발생해도 러너가 중단되지 않고 에러 메시지(줄 번호 포함 여부)를 포착해 검증하기 위해 사용 |
+| 패턴 매칭(`string.find`/`match`/`gsub`/`gmatch`) + 줄 번호 추적 | `project/src/models/WaveParser.lua:51-116` | 전체 문자열에 `gmatch`만 쓰면 규칙에 어긋난 줄을 조용히 건너뛰므로, `find("\n")`로 줄 단위 분리·줄 번호를 세고 각 줄을 엄격하게 토큰화·검증해 `waves:<줄번호>:` 에러를 보고 |
 
 ---
 
-## 3-3. 설명 문항 (R2~R6 구현 후 작성 예정)
+## 3-3. 설명 문항 (R3~R6 구현 후 보완 예정)
 
 1. *(R3/R4 구현 후 작성 예정)* 내 적 클래스 하나를 골라, `enemy:update(dt)`를 호출했을 때 `update`를 어떤 순서로 찾는지 `__index` 탐색 경로로 설명하세요.
-2. *(R2 구현 후 작성 예정)* 내 웨이브 파서가 잘못된 줄을 어떻게 잡아내는지 설명하세요. `gmatch`만 썼다면 어떤 입력을 놓치는지, 그것을 막는 테스트가 어디 있는지 적으세요.
+2. **내 웨이브 파서가 잘못된 줄을 어떻게 잡아내는지 설명하세요. `gmatch`만 썼다면 어떤 입력을 놓치는지, 그것을 막는 테스트가 어디 있는지 적으세요.**
+   - `project/src/models/WaveParser.lua:51-116`은 전체 문자열에 `gmatch`를 돌리지 않고 `text:find("\n", pos, true)`로 한 줄씩 분리하며 `lineNo`를 1씩 증가시킵니다. 각 줄에서 `\r`와 앞뒤 공백을 제거한 뒤 빈 줄과 `#` 주석만 건너뛰고, 나머지 모든 줄은 공백 기준으로 토큰화(`splitTokens`)해 첫 토큰이 `"wave"` 또는 `"spawn"`인지, 토큰 개수·정수 번호·중복 번호·적 종류 패턴(`[A-Za-z0-9_]+`)·0 이상 유한 숫자인지를 검사합니다. 하나라도 어긋나면 `parseError(lineNo, reason)`(`WaveParser.lua:14-16`)이 `waves:<줄번호>: <사유>` 형식으로 즉시 `error()`를 던집니다.
+   - 만약 전체 텍스트에 `text:gmatch("spawn%s+(%w+)%s+(%d+)%s+(%d+)")`처럼 `gmatch`만 썼다면, 명령어 오타(`spwn basic 120 60`), 인자 초과(`spawn basic 60 60 extra`), 비숫자·음수 좌표(`spawn basic abc 60`, `spawn basic -5 60`), `wave` 헤더 전 `spawn` 같은 잘못된 줄이 패턴에 매치되지 않아 **아무 오류 없이 조용히 무시**됩니다.
+   - 이를 막는 테스트는 `project/tests/wave_parser_test.lua:106-163`(5~10번 테스트: 오타 명령어 3번 줄, 인자 부족/초과/비숫자 좌표, 헤더 전 `spawn`·음수 좌표·중복/비정수/무한대 `wave` 번호, 빈 파일·빈 웨이브, `nan`/`inf`·잘못된 적 종류)에 있습니다.
 3. *(R6 구현 후 작성 예정)* 깨진 하이스코어 문자열이 들어왔을 때 어디서 오류가 생기고 어디서 막히는지(`pcall`/기본값 처리) 흐름을 설명하세요.
 
 ---
 
 ## 3-4. 알려진 문제와 한계
-- 현재까지 **기준선 + R1(`HelpScene`)**만 완료된 상태이며, R2(웨이브 파서), R3/R4(적 3종·FSM), R5(업적), R6(저장/불러오기), R7(번짐 실측)은 후속 작업에서 구현 및 보고서 보완 예정입니다.
-- 현재 PC 환경에 `luajit` 단독 실행 파일이 없어 Lua 5.1.5(`lua`, `luac`) 기준으로 테스트 및 `SETGLOBAL` 정적 검사를 수행했습니다.
+- 현재까지 **기준선 + R1(`HelpScene`) + R2(`WaveParser` · `waves.txt`)**가 완료된 상태이며, R3/R4(적 3종·FSM), R5(업적), R6(저장/불러오기), R7(번짐 실측)은 후속 작업에서 구현 및 보고서 보완 예정입니다.
+- 현재 PC 환경에 `luajit` 단독 실행 파일이 없어 `lua`/`luac` 기준으로 테스트 및 전역 쓰기(`SETGLOBAL`/`SETTABUP`) 정적 검사를 수행했습니다.
