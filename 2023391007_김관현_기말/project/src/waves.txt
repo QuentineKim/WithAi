@@ -1,55 +1,50 @@
 # MVC 겔러그 웨이브 데이터 (형식: docs/waves_format.md)
 
-# 웨이브 1: 3x6 기본 편대
+# 웨이브 1: 혼합 편대 (상단 tank, 중단 scout, 하단 basic)
 wave 1
-spawn basic 90 60
-spawn basic 160 60
-spawn basic 230 60
-spawn basic 300 60
-spawn basic 370 60
-spawn basic 440 60
-spawn basic 90 110
-spawn basic 160 110
-spawn basic 230 110
-spawn basic 300 110
-spawn basic 370 110
-spawn basic 440 110
-spawn basic 90 160
-spawn basic 160 160
-spawn basic 230 160
-spawn basic 300 160
-spawn basic 370 160
-spawn basic 440 160
+spawn tank 120 60
+spawn tank 260 60
+spawn tank 400 60
+spawn scout 90 115
+spawn scout 180 115
+spawn scout 270 115
+spawn scout 360 115
+spawn scout 450 115
+spawn basic 90 165
+spawn basic 160 165
+spawn basic 230 165
+spawn basic 300 165
+spawn basic 370 165
+spawn basic 440 165
 
-# 웨이브 2: V자 편대
+# 웨이브 2: V자 정찰 편대
 wave 2
-spawn basic 60 60
-spawn basic 480 60
-spawn basic 120 100
-spawn basic 420 100
+spawn scout 60 60
+spawn scout 480 60
+spawn scout 120 100
+spawn scout 420 100
 spawn basic 180 140
 spawn basic 360 140
-spawn basic 240 180
-spawn basic 300 180
+spawn tank 240 180
+spawn tank 310 180
 spawn basic 180 60
 spawn basic 240 60
 spawn basic 300 60
 spawn basic 360 60
 
-# 웨이브 3: 2열 집중 편대
+# 웨이브 3: 중장갑 집중 편대
 wave 3
-spawn basic 70 70
-spawn basic 130 70
-spawn basic 190 70
-spawn basic 250 70
-spawn basic 310 70
-spawn basic 370 70
-spawn basic 430 70
-spawn basic 490 70
-spawn basic 100 130
-spawn basic 160 130
-spawn basic 220 130
-spawn basic 280 130
-spawn basic 340 130
-spawn basic 400 130
-spawn basic 460 130
+spawn tank 80 70
+spawn tank 180 70
+spawn tank 280 70
+spawn tank 380 70
+spawn tank 480 70
+spawn scout 100 130
+spawn scout 180 130
+spawn scout 260 130
+spawn scout 340 130
+spawn scout 420 130
+spawn basic 140 180
+spawn basic 220 180
+spawn basic 300 180
+spawn basic 380 180

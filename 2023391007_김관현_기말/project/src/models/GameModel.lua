@@ -6,7 +6,7 @@
 local class = require("class")
 local Rng = require("rng")
 local PlayerModel = require("PlayerModel")
-local EnemyModel = require("EnemyModel")
+local EnemyFactory = require("EnemyFactory")
 local BulletModel = require("BulletModel")
 local homing = require("homing")
 local FormationPhase = require("FormationPhase")
@@ -70,14 +70,14 @@ function GameModel:spawnFormation()
     self.waveIndex = (self.waveIndex % #self.waves) + 1
     local wave = self.waves[self.waveIndex]
     for _, spawn in ipairs(wave.spawns) do
-      self.enemies[#self.enemies + 1] = EnemyModel(spawn.x, spawn.y, spawn.kind)
+      self.enemies[#self.enemies + 1] = EnemyFactory.create(spawn.kind, spawn.x, spawn.y)
     end
     return
   end
 
   for row = 0, 3 do
     for col = 0, 7 do
-      self.enemies[#self.enemies + 1] = EnemyModel(60 + col * 60, 60 + row * 50)
+      self.enemies[#self.enemies + 1] = EnemyFactory.create("basic", 60 + col * 60, 60 + row * 50)
     end
   end
 end
@@ -98,6 +98,7 @@ end
 --
 -- 이벤트 계약 (GameModel → View):
 --   { type = "fire" }
+--   { type = "enemy_hit", x = number, y = number }
 --   { type = "enemy_destroyed", x = number, y = number }
 --   { type = "player_hit" }
 --   { type = "game_over" }
@@ -215,9 +216,12 @@ function GameModel:_resolveCollisions()
     local b = self.bullets[bi]
     for _, e in ipairs(self.enemies) do
       if e.alive and overlaps(b, e) then
-        e.alive = false
-        self.score = self.score + 100
-        self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+        if e:hit(1) then
+          self.score = self.score + (e.scoreValue or 100)
+          self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+        else
+          self:_emit({ type = "enemy_hit", x = e:centerX(), y = e:centerY() })
+        end
         table.remove(self.bullets, bi)
         break
       end
