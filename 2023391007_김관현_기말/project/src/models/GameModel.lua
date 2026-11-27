@@ -37,6 +37,13 @@ function GameModel:init(opts)
   self.height = opts.height or 800
   self.rng = Rng(opts.seed or 1)
   self.waves = opts.waves
+  self._aiCtx = {
+    rng = self.rng,
+    playerX = 0,
+    playerY = 0,
+    width = self.width,
+    height = self.height,
+  }
   self:reset()
 end
 
@@ -147,6 +154,7 @@ function GameModel:update(dt, input)
   end
 
   self:_updateFormation(dt)
+  self:_updateEnemies(dt)
   self:_updateEnemyFire(dt)
   self.phase:update(self, dt)
 
@@ -168,8 +176,8 @@ function GameModel:_updateFormation(dt)
   local minx, maxx = math.huge, -math.huge
   for _, e in ipairs(self.enemies) do
     if e.alive then
-      minx = math.min(minx, e.x)
-      maxx = math.max(maxx, e.x + e.w)
+      minx = math.min(minx, e.homeX)
+      maxx = math.max(maxx, e.homeX + e.w)
     end
   end
   if minx == math.huge then
@@ -179,11 +187,22 @@ function GameModel:_updateFormation(dt)
   if maxx + dx > self.width - 10 or minx + dx < 10 then
     self.formationDir = -self.formationDir
     for _, e in ipairs(self.enemies) do
-      e.y = e.y + FORMATION_DESCEND
+      e.homeY = e.homeY + FORMATION_DESCEND
     end
   else
     for _, e in ipairs(self.enemies) do
-      e.x = e.x + dx
+      e.homeX = e.homeX + dx
+    end
+  end
+end
+
+function GameModel:_updateEnemies(dt)
+  local aiCtx = self._aiCtx
+  aiCtx.playerX = self.player.x + self.player.w * 0.5
+  aiCtx.playerY = self.player.y + self.player.h * 0.5
+  for _, e in ipairs(self.enemies) do
+    if e.alive then
+      e:update(dt, aiCtx)
     end
   end
 end
@@ -197,7 +216,7 @@ function GameModel:_updateEnemyFire(dt)
 
   local alive = {}
   for _, e in ipairs(self.enemies) do
-    if e.alive then
+    if e.alive and e.y >= 0 then
       alive[#alive + 1] = e
     end
   end

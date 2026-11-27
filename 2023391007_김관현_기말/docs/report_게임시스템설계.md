@@ -1,7 +1,7 @@
-# [게임시스템설계(2A)] 기말과제 보고서 (초안: 기준선 + R1 + R2)
+# [게임시스템설계(2A)] 기말과제 보고서 (초안: 기준선 + R1~R4)
 
 - **출발 코드**: 선택 B — `lua_tuto/mvc/week05/examples/galaga_states`
-- **현재 진행 상태**: 기준선 세팅, R1(`HelpScene`), R2(`WaveParser` · `waves.txt`) 완료 (R3~R7 구현 후 보완 예정)
+- **현재 진행 상태**: 기준선, R1(`HelpScene`), R2(`WaveParser`), R3(적 3종·`EnemyFactory`), R4(적 AI 4상태 `EnemyAI`) 완료 (R5~R7 구현 후 보완 예정)
 
 ---
 
@@ -9,10 +9,12 @@
 
 | 파일 / 기능 | 출처 | 수정 정도 |
 |---|---|---|
-| `project/src/` 기본 MVC 겔러그 코드 (`models/`, `views/`, `controllers/`, `scenes/`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | `main.lua`, `TitleScene.lua`, `TitleView.lua`에 R1 연결부, `main.lua`, `PlayScene.lua`, `GameModel.lua`, `EnemyModel.lua`에 R2 웨이브 연동부 추가 |
+| `project/src/` 기본 MVC 겔러그 코드 (`models/`, `views/`, `controllers/`, `scenes/`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | `main.lua`, `TitleScene.lua`, `TitleView.lua`(R1), `PlayScene.lua`, `GameModel.lua`, `EnemyModel.lua`, `EnemyView.lua`(R2~R4)에 확장 연결부 추가 |
 | `project/tests/helper.lua`, `layer_check.lua`, `phase_test.lua`, `scene_test.lua` | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/tests`) | `helper.lua`·`scene_test.lua`에 R1 검증 테스트 3건 추가 (`equivalence_test.lua` 제외) |
 | `project/src/scenes/HelpScene.lua`, `project/src/views/HelpView.lua` | AI 협업 작성 (R1 신규) | 신규 작성 |
 | `docs/waves_format.md`, `project/src/waves.txt`, `project/src/models/WaveParser.lua`, `project/tests/wave_parser_test.lua` | AI 협업 작성 (R2 신규) | 신규 작성 |
+| `project/src/models/{BasicEnemy,ScoutEnemy,TankEnemy,EnemyFactory}.lua`, `project/tests/enemy_factory_test.lua` | AI 협업 작성 (R3 신규) | 신규 작성 |
+| `project/src/models/EnemyAI.lua`, `project/tests/enemy_ai_test.lua` | AI 협업 작성 (R4 신규) | 신규 작성 |
 
 ---
 
@@ -30,12 +32,18 @@
 | `ipairs` vs `pairs` 선택 | `project/src/models/GameModel.lua:157`, `project/tests/layer_check.lua:63` | 배열(`enemies`, `bullets`)은 순서 보장을 위해 `ipairs`, 문자열 키 딕셔너리(`RULES`)는 모든 키 순회를 위해 `pairs`를 구분해 사용 |
 | `pcall` 보호 호출 | `project/tests/helper.lua:27`, `project/tests/wave_parser_test.lua:17` | 테스트 함수와 파서 오류 검증에서 `error()`가 발생해도 러너가 중단되지 않고 에러 메시지(줄 번호 포함 여부)를 포착해 검증하기 위해 사용 |
 | 패턴 매칭(`string.find`/`match`/`gsub`/`gmatch`) + 줄 번호 추적 | `project/src/models/WaveParser.lua:51-116` | 전체 문자열에 `gmatch`만 쓰면 규칙에 어긋난 줄을 조용히 건너뛰므로, `find("\n")`로 줄 단위 분리·줄 번호를 세고 각 줄을 엄격하게 토큰화·검증해 `waves:<줄번호>:` 에러를 보고 |
+| 메타테이블 단일 상속 (`class(EnemyModel)`) | `project/src/models/class.lua:18-22`, `project/src/models/TankEnemy.lua:7` | `TankEnemy`의 메타테이블 `mt.__index = EnemyModel`로 연결해 `hit`, `update`, `centerX` 같은 공통 메서드를 중복 작성하지 않고 공유 |
+| 함수 테이블 디스패치 (Factory / State 테이블) | `project/src/models/EnemyFactory.lua:15-25`, `project/src/models/EnemyAI.lua:85-90` | 긴 `if/elseif` 분기 대신 문자열 키 → 함수 테이블(`REGISTRY[kind]`, `STATES[aiState]`)로 O(1) 조회·확장(예약어 키는 `["return"]`으로 안전하게 표기) |
 
 ---
 
-## 3-3. 설명 문항 (R3~R6 구현 후 보완 예정)
+## 3-3. 설명 문항 (R6 구현 후 Q3 보완 예정)
 
-1. *(R3/R4 구현 후 작성 예정)* 내 적 클래스 하나를 골라, `enemy:update(dt)`를 호출했을 때 `update`를 어떤 순서로 찾는지 `__index` 탐색 경로로 설명하세요.
+1. **내 적 클래스 하나를 골라, `enemy:update(dt)`를 호출했을 때 `update`를 어떤 순서로 찾는지 `__index` 탐색 경로로 설명하세요.**
+   - `TankEnemy` 인스턴스 `e = EnemyFactory.create("tank", x, y)`에서 `e:update(dt, ctx)`를 호출하면 Lua는 다음 순서로 `update` 키를 탐색합니다.
+   - ① **인스턴스 테이블 `e` 자체**: `TankEnemy:init`(`project/src/models/TankEnemy.lua:9-17`)은 데이터 필드(`x`, `y`, `hp`, `aiState` 등)만 넣으므로 `rawget(e, "update")`는 `nil`입니다.
+   - ② **`e`의 메타테이블 `TankEnemy` (`TankEnemy.__index == TankEnemy`)**: `class.lua:6,10`에 의해 `e`의 메타테이블은 `TankEnemy` 테이블입니다. `TankEnemy`에도 `update`가 없으므로 `nil`입니다.
+   - ③ **`TankEnemy`의 메타테이블 `mt.__index == EnemyModel`**: `TankEnemy = class(EnemyModel)`(`TankEnemy.lua:7`, `class.lua:18-20`)에서 `TankEnemy`의 메타테이블 `__index`가 부모 클래스 `EnemyModel`을 가리킵니다. 여기서 `EnemyModel.update`(`project/src/models/EnemyModel.lua:41-43`)를 찾아 `e`를 첫 인자(`self`)로 바인딩해 호출하고, 내부에서 `EnemyAI.update(self, dt, ctx)`로 위임합니다.
 2. **내 웨이브 파서가 잘못된 줄을 어떻게 잡아내는지 설명하세요. `gmatch`만 썼다면 어떤 입력을 놓치는지, 그것을 막는 테스트가 어디 있는지 적으세요.**
    - `project/src/models/WaveParser.lua:51-116`은 전체 문자열에 `gmatch`를 돌리지 않고 `text:find("\n", pos, true)`로 한 줄씩 분리하며 `lineNo`를 1씩 증가시킵니다. 각 줄에서 `\r`와 앞뒤 공백을 제거한 뒤 빈 줄과 `#` 주석만 건너뛰고, 나머지 모든 줄은 공백 기준으로 토큰화(`splitTokens`)해 첫 토큰이 `"wave"` 또는 `"spawn"`인지, 토큰 개수·정수 번호·중복 번호·적 종류 패턴(`[A-Za-z0-9_]+`)·0 이상 유한 숫자인지를 검사합니다. 하나라도 어긋나면 `parseError(lineNo, reason)`(`WaveParser.lua:14-16`)이 `waves:<줄번호>: <사유>` 형식으로 즉시 `error()`를 던집니다.
    - 만약 전체 텍스트에 `text:gmatch("spawn%s+(%w+)%s+(%d+)%s+(%d+)")`처럼 `gmatch`만 썼다면, 명령어 오타(`spwn basic 120 60`), 인자 초과(`spawn basic 60 60 extra`), 비숫자·음수 좌표(`spawn basic abc 60`, `spawn basic -5 60`), `wave` 헤더 전 `spawn` 같은 잘못된 줄이 패턴에 매치되지 않아 **아무 오류 없이 조용히 무시**됩니다.

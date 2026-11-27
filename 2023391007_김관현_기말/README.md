@@ -1,6 +1,6 @@
 # MVC 겔러그 기말 프로젝트 (`2023391007_김관현_기말`)
 
-> 현재 상태: R1(도움말 씬 `HelpScene`) + R2(웨이브 데이터 `waves.txt` · `WaveParser`) 구현 및 테스트 통과 (R3~R7 미구현)
+> 현재 상태: R1(`HelpScene`) + R2(`WaveParser` · `waves.txt`) + R3(적 3종 · `EnemyFactory`) + R4(적 AI 4상태 `EnemyAI`) 구현 및 테스트 통과 (R5~R7 미구현)
 
 ## 1. 출발 코드
 - **선택 B (공개 완성본)**: `lua_tuto/mvc/week05/examples/galaga_states`
@@ -14,9 +14,9 @@
   run.bat / run.sh
   project/
     src/      ← main.lua, conf.lua, waves.txt, models/, views/, controllers/, scenes/
-    tests/    ← helper.lua, layer_check.lua, phase_test.lua, scene_test.lua, wave_parser_test.lua
+    tests/    ← helper.lua, layer_check.lua, phase_test.lua, scene_test.lua, wave_parser_test.lua, enemy_factory_test.lua, enemy_ai_test.lua
   docs/       ← waves_format.md, report_게임시스템설계.md, report_게임인공지능.md (git_log.txt 추후 추가)
-  worklogs/   ← 001~003 세션별 로그 (최종 회고 추후 추가)
+  worklogs/   ← 001~005 세션별 로그 (최종 회고 추후 추가)
 ```
 
 ## 3. 테스트 및 정적 검사 실행
@@ -28,6 +28,8 @@ lua layer_check.lua src
 lua phase_test.lua src
 lua scene_test.lua src
 lua wave_parser_test.lua src
+lua enemy_factory_test.lua src
+lua enemy_ai_test.lua src
 ```
 
 ## 4. 게임 실행 방법
