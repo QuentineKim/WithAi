@@ -1,6 +1,6 @@
 # MVC 겔러그 기말 프로젝트 (`2023391007_김관현_기말`)
 
-> 현재 상태: R1(`HelpScene`) + R2(`WaveParser` · `waves.txt`) + R3(적 3종 · `EnemyFactory`) + R4(적 AI 4상태 `EnemyAI`) + R5(업적 3종 · `AchievementModel` + `EffectsView` 배너/연출) + R6(하이스코어 `HighScoreModel`) + 패럴랙스 우주·트윈 사행 유도탄·Graze/Overdrive/파워업(`WeaponDecorator`)·보스 광폭화/레이저 구현 및 전체 테스트 통과 (R7 번짐 실측만 남음)
+> 현재 상태: **필수 요건 R1 ~ R7 전체 완료** (`HelpScene`, `WaveParser`·`waves.txt`, 적 4종·`EnemyFactory`, `EnemyAI` 4상태, 업적 3종·`AchievementModel`, 하이스코어 `HighScoreModel`, R7 `SniperEnemy` 번짐 실측) + 패럴랙스 우주·트윈 사행 유도탄·Graze/Overdrive/파워업(`WeaponDecorator`)·보스 광폭화/레이저 구현 및 전체 80개 테스트 통과
 
 ## 1. 출발 코드
 - **선택 B (공개 완성본)**: `lua_tuto/mvc/week05/examples/galaga_states`
@@ -15,8 +15,8 @@
   project/
     src/      ← main.lua, conf.lua, waves.txt, models/, views/, controllers/, scenes/
     tests/    ← helper.lua, layer_check.lua, phase_test.lua, scene_test.lua, wave_parser_test.lua, enemy_factory_test.lua, enemy_ai_test.lua, achievement_test.lua, highscore_test.lua, homing_test.lua, powerup_graze_test.lua, boss_enrage_test.lua
-  docs/       ← waves_format.md, report_게임시스템설계.md, report_게임인공지능.md (git_log.txt 추후 추가)
-  worklogs/   ← 001~007 세션별 로그 (최종 회고 추후 추가)
+  docs/       ← waves_format.md, git_log.txt, report_게임시스템설계.md, report_게임인공지능.md
+  worklogs/   ← 001~008 세션별 로그, 999_retrospective.md
 ```
 
 ## 3. 테스트 및 정적 검사 실행
