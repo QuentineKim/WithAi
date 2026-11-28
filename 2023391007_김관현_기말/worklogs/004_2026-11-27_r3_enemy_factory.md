@@ -19,7 +19,7 @@
 - 도구: Antigravity (에이전트 `test-runner`, `lua-reviewer`, 스킬 `mvc-boundary` · `lua51-guard`)
 - 목적: 승인된 계획대로 R3 TDD 구현, 검증 및 리뷰 지적 보완
 - 프롬프트 원문:
-  > ㄱㄱ
+  > 좋아 수립된 계획대로 실행해보고 절차를 따라
 - AI 결과 요약:
   - [Before] `enemy_factory_test.lua`(4건)를 먼저 작성해 `module 'EnemyFactory' not found`(EXIT:1) 실패를 확인함.
   - [Mid] `BasicEnemy`·`ScoutEnemy`·`TankEnemy`·`EnemyFactory`를 구현하고 `GameModel`에서 `e:takeDamage(1)`을 호출했더니, `test-runner` 실행 시 읽기 전용 `phase_test.lua:141`의 정적 검사(`남아 있는 보스 규칙: takeDamage`)가 1건 실패함.

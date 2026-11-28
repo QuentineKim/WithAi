@@ -31,9 +31,6 @@ function BossPhase:update(game, dt)
 end
 
 function BossPhase:resolveCollisions(game)
-  if game.state ~= "playing" then
-    return
-  end
   local boss = game.boss
   if not (boss and boss.alive) then
     return
@@ -56,13 +53,14 @@ function BossPhase:resolveCollisions(game)
     game:_emit({ type = "boss_enraged" })
   end
 
-  if game.state == "playing" and boss.alive and boss.laserState == "firing" and not boss.laserHit then
-    local bx = boss.laserX - boss.laserW * 0.5
-    local by = boss.y + boss.h
-    local bw = boss.laserW
-    local bh = game.height
-    local p = game.player
-    if bx < p.x + p.w and p.x < bx + bw and by < p.y + p.h and p.y < by + bh then
+  if boss.alive and boss.laserState == "firing" and not boss.laserHit then
+    local beam = {
+      x = boss.laserX - boss.laserW * 0.5,
+      y = boss.y + boss.h,
+      w = boss.laserW,
+      h = game.height,
+    }
+    if overlaps(beam, game.player) then
       boss.laserHit = true
       if game.shield then
         game.shield = false

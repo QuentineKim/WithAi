@@ -79,7 +79,7 @@ function GameModel:reset()
   self.enemyFireTimer = ENEMY_FIRE_INTERVAL
   self.missileCooldown = 0
   self.waveIndex = 0
-  self.boss = nil -- BossPhase 가 채운다 (View 가 읽는다)
+  self.boss = nil  -- BossPhase 가 채운다 (View 가 읽는다)
   self.events = {} -- 스텝마다 쌓이고, 소비자(View)가 drainEvents() 로 비운다
   self:spawnFormation()
   self.phase = nil
@@ -270,7 +270,7 @@ function GameModel:_updateEnemyFire(dt)
   end
   local e = alive[self.rng:range(#alive)]
   self.enemyBullets[#self.enemyBullets + 1] =
-    BulletModel(e:centerX() - 2, e.y + e.h, 0, ENEMY_BULLET_SPEED, 4, 12, "enemy")
+      BulletModel(e:centerX() - 2, e.y + e.h, 0, ENEMY_BULLET_SPEED, 4, 12, "enemy")
 end
 
 function GameModel:_updatePowerups(dt)
@@ -340,7 +340,6 @@ function GameModel:_resolveCollisions()
         if self.lives <= 0 then
           self.state = "gameover"
           self:_emit({ type = "game_over" })
-          break
         end
       end
     elseif not eb.grazed and overlapsExpanded(eb, self.player, GRAZE_MARGIN) then
