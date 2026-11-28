@@ -25,15 +25,20 @@ end
 function BossPhase:update(game, dt)
   local boss = game.boss
   if boss and boss.alive then
-    boss:update(dt, game.width, game.enemyBullets)
+    local px = game.player.x + game.player.w * 0.5
+    boss:update(dt, game.width, game.enemyBullets, px)
   end
 end
 
 function BossPhase:resolveCollisions(game)
+  if game.state ~= "playing" then
+    return
+  end
   local boss = game.boss
   if not (boss and boss.alive) then
     return
   end
+  local wasEnraged = boss.enraged
   for bi = #game.bullets, 1, -1 do
     local b = game.bullets[bi]
     if overlaps(b, boss) then
@@ -44,6 +49,31 @@ function BossPhase:resolveCollisions(game)
         game.state = "won"
         game:_emit({ type = "boss_destroyed", x = boss:centerX(), y = boss:centerY() })
         break
+      end
+    end
+  end
+  if not wasEnraged and boss.enraged and boss.alive then
+    game:_emit({ type = "boss_enraged" })
+  end
+
+  if game.state == "playing" and boss.alive and boss.laserState == "firing" and not boss.laserHit then
+    local bx = boss.laserX - boss.laserW * 0.5
+    local by = boss.y + boss.h
+    local bw = boss.laserW
+    local bh = game.height
+    local p = game.player
+    if bx < p.x + p.w and p.x < bx + bw and by < p.y + p.h and p.y < by + bh then
+      boss.laserHit = true
+      if game.shield then
+        game.shield = false
+        game:_emit({ type = "shield_broken" })
+      else
+        game.lives = game.lives - 1
+        game:_emit({ type = "player_hit" })
+        if game.lives <= 0 then
+          game.state = "gameover"
+          game:_emit({ type = "game_over" })
+        end
       end
     end
   end

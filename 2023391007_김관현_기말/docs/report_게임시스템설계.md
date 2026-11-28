@@ -1,7 +1,7 @@
-# [게임시스템설계(2A)] 기말과제 보고서 (초안: 기준선 + R1~R4)
+# [게임시스템설계(2A)] 기말과제 보고서 (초안: 기준선 + R1~R6 + 연출·전투 업그레이드)
 
 - **출발 코드**: 선택 B — `lua_tuto/mvc/week05/examples/galaga_states`
-- **현재 진행 상태**: 기준선, R1(`HelpScene`), R2(`WaveParser`), R3(적 3종·`EnemyFactory`), R4(적 AI 4상태 `EnemyAI`) 완료 (R5~R7 구현 후 보완 예정)
+- **현재 진행 상태**: 기준선, R1(`HelpScene`), R2(`WaveParser`), R3(적 3종·`EnemyFactory`), R4(적 AI 4상태 `EnemyAI`), R5(업적 3종 `AchievementModel` + `EffectsView` 연출·배너), R6(`HighScoreModel` 저장/복원) + 패럴랙스 우주·감쇠 사인파 트윈 유도탄·Graze/Overdrive/파워업(`WeaponDecorator`)·보스 광폭화/레이저 완료 (R7 번짐 실측만 남음)
 
 ---
 
@@ -9,16 +9,18 @@
 
 | 파일 / 기능 | 출처 | 수정 정도 |
 |---|---|---|
-| `project/src/` 기본 MVC 겔러그 코드 (`models/`, `views/`, `controllers/`, `scenes/`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | `main.lua`, `TitleScene.lua`, `TitleView.lua`(R1), `PlayScene.lua`, `GameModel.lua`, `EnemyModel.lua`, `EnemyView.lua`(R2~R4)에 확장 연결부 추가 |
+| `project/src/` 기본 MVC 겔러그 코드 (`models/`, `views/`, `controllers/`, `scenes/`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | R1(`HelpScene`), R2(`WaveParser`), R3(`EnemyFactory`), R4(`EnemyAI`), R5(`AchievementModel`·`EffectsView`), R6(`HighScoreModel`·`ResultScene`·`ResultView`), 유도탄(`homing.steerWave`·`BulletModel`·`BulletView`), Graze/파워업(`GameModel`·`HudView`·`PlayerView`), 보스 광폭화/레이저(`BossModel`·`BossPhase`·`BossView`) 확장 |
 | `project/tests/helper.lua`, `layer_check.lua`, `phase_test.lua`, `scene_test.lua` | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/tests`) | `helper.lua`·`scene_test.lua`에 R1 검증 테스트 3건 추가 (`equivalence_test.lua` 제외) |
 | `project/src/scenes/HelpScene.lua`, `project/src/views/HelpView.lua` | AI 협업 작성 (R1 신규) | 신규 작성 |
 | `docs/waves_format.md`, `project/src/waves.txt`, `project/src/models/WaveParser.lua`, `project/tests/wave_parser_test.lua` | AI 협업 작성 (R2 신규) | 신규 작성 |
 | `project/src/models/{BasicEnemy,ScoutEnemy,TankEnemy,EnemyFactory}.lua`, `project/tests/enemy_factory_test.lua` | AI 협업 작성 (R3 신규) | 신규 작성 |
 | `project/src/models/EnemyAI.lua`, `project/tests/enemy_ai_test.lua` | AI 협업 작성 (R4 신규) | 신규 작성 |
+| `project/src/models/AchievementModel.lua`, `project/tests/achievement_test.lua` | AI 협업 작성 (R5 신규) | 신규 작성 |
+| `project/src/models/HighScoreModel.lua`, `project/src/models/WeaponDecorator.lua`, `project/src/views/StarfieldView.lua`, `project/tests/{highscore,homing,powerup_graze,boss_enrage}_test.lua` | AI 협업 작성 (R6 + 게임플레이 업그레이드 신규) | 신규 작성 |
 
 ---
 
-## 3-2. Lua 문법 매핑표 (현재 기준선 + R1 기준 9행, R2~R6 구현 시 추가 예정)
+## 3-2. Lua 문법 매핑표 (14행)
 
 | Lua 문법 요소 | 위치 (`파일:줄`) | 왜 이 문법을 썼나 (대안과 비교) |
 |---|---|---|
@@ -34,10 +36,12 @@
 | 패턴 매칭(`string.find`/`match`/`gsub`/`gmatch`) + 줄 번호 추적 | `project/src/models/WaveParser.lua:51-116` | 전체 문자열에 `gmatch`만 쓰면 규칙에 어긋난 줄을 조용히 건너뛰므로, `find("\n")`로 줄 단위 분리·줄 번호를 세고 각 줄을 엄격하게 토큰화·검증해 `waves:<줄번호>:` 에러를 보고 |
 | 메타테이블 단일 상속 (`class(EnemyModel)`) | `project/src/models/class.lua:18-22`, `project/src/models/TankEnemy.lua:7` | `TankEnemy`의 메타테이블 `mt.__index = EnemyModel`로 연결해 `hit`, `update`, `centerX` 같은 공통 메서드를 중복 작성하지 않고 공유 |
 | 함수 테이블 디스패치 (Factory / State 테이블) | `project/src/models/EnemyFactory.lua:15-25`, `project/src/models/EnemyAI.lua:85-90` | 긴 `if/elseif` 분기 대신 문자열 키 → 함수 테이블(`REGISTRY[kind]`, `STATES[aiState]`)로 O(1) 조회·확장(예약어 키는 `["return"]`으로 안전하게 표기) |
+| `pcall` 기반 안전 역직렬화 + 기본값 복구 | `project/src/models/HighScoreModel.lua:23-83`, `project/src/main.lua:17-27` | `parseStrict`가 형식 위반·음수·`nan`/`inf`·누락 필드에 대해 `error()`를 던지고, `HighScoreModel.deserialize`가 `pcall(parseStrict, text)`로 포착해 크래시 없이 `{ bestScore = 0, plays = 0 }`으로 복구 |
+| 삼각·지수 함수(`math.atan2`/`sin`/`exp`) + 모듈로 각도 정규화 | `project/src/models/homing.lua:43-70` | 직선 보간(`steer`) 대신 `wrapPi`로 `(-π, π]` 최단 회전각을 구하고 `amp * sin(freq * age + phase) * exp(-damp * age)` 감쇠 사인파를 더해 초반 S자 사행 후 목표에 수렴하는 트윈 유도탄을 구현 |
 
 ---
 
-## 3-3. 설명 문항 (R6 구현 후 Q3 보완 예정)
+## 3-3. 설명 문항
 
 1. **내 적 클래스 하나를 골라, `enemy:update(dt)`를 호출했을 때 `update`를 어떤 순서로 찾는지 `__index` 탐색 경로로 설명하세요.**
    - `TankEnemy` 인스턴스 `e = EnemyFactory.create("tank", x, y)`에서 `e:update(dt, ctx)`를 호출하면 Lua는 다음 순서로 `update` 키를 탐색합니다.
@@ -48,10 +52,14 @@
    - `project/src/models/WaveParser.lua:51-116`은 전체 문자열에 `gmatch`를 돌리지 않고 `text:find("\n", pos, true)`로 한 줄씩 분리하며 `lineNo`를 1씩 증가시킵니다. 각 줄에서 `\r`와 앞뒤 공백을 제거한 뒤 빈 줄과 `#` 주석만 건너뛰고, 나머지 모든 줄은 공백 기준으로 토큰화(`splitTokens`)해 첫 토큰이 `"wave"` 또는 `"spawn"`인지, 토큰 개수·정수 번호·중복 번호·적 종류 패턴(`[A-Za-z0-9_]+`)·0 이상 유한 숫자인지를 검사합니다. 하나라도 어긋나면 `parseError(lineNo, reason)`(`WaveParser.lua:14-16`)이 `waves:<줄번호>: <사유>` 형식으로 즉시 `error()`를 던집니다.
    - 만약 전체 텍스트에 `text:gmatch("spawn%s+(%w+)%s+(%d+)%s+(%d+)")`처럼 `gmatch`만 썼다면, 명령어 오타(`spwn basic 120 60`), 인자 초과(`spawn basic 60 60 extra`), 비숫자·음수 좌표(`spawn basic abc 60`, `spawn basic -5 60`), `wave` 헤더 전 `spawn` 같은 잘못된 줄이 패턴에 매치되지 않아 **아무 오류 없이 조용히 무시**됩니다.
    - 이를 막는 테스트는 `project/tests/wave_parser_test.lua:106-163`(5~10번 테스트: 오타 명령어 3번 줄, 인자 부족/초과/비숫자 좌표, 헤더 전 `spawn`·음수 좌표·중복/비정수/무한대 `wave` 번호, 빈 파일·빈 웨이브, `nan`/`inf`·잘못된 적 종류)에 있습니다.
-3. *(R6 구현 후 작성 예정)* 깨진 하이스코어 문자열이 들어왔을 때 어디서 오류가 생기고 어디서 막히는지(`pcall`/기본값 처리) 흐름을 설명하세요.
+3. **깨진 하이스코어 문자열이 들어왔을 때 어디서 오류가 생기고 어디서 막히는지(`pcall`/기본값 처리) 흐름을 설명하세요.**
+   - ① **파일 읽기 방어 (`project/src/main.lua:17-23`)**: 게임 시작 시 `loadHighScore()`가 `pcall(love.filesystem.read, "highscore.txt")`로 파일을 읽습니다. 파일이 없거나 읽기 오류가 나면 `nil`을 반환해 `HighScoreModel(nil)`로 넘깁니다.
+   - ② **엄격 파서에서 오류 발생 (`project/src/models/HighScoreModel.lua:23-66`)**: `parseStrict(text)`는 비문자열/빈 문자열(`35-37줄`), 알 수 없는 키(`58줄`), 필수 필드(`best`/`plays`) 누락(`62-64줄`)을 검사하고, `parseNonNegInt`(`23-32줄`)가 숫자 패턴(`^%d+$`) 위반·음수·`nan`/`inf`·비정수일 때 `error(...)`를 즉시 던집니다.
+   - ③ **`pcall` 포착 및 기본값 복구 (`HighScoreModel.lua:77-83, 85-90`)**: `HighScoreModel.deserialize(text)`가 `pcall(parseStrict, text)`로 호출을 감싸 오류를 포착합니다. `ok == false`이면 예외를 전파하지 않고 `defaultCopy()`(`{ bestScore = 0, plays = 0 }`)와 `false`를 반환하며, `HighScoreModel:init`은 이를 그대로 받아 `loadedOk = false` 상태로 안전하게 게임을 시작합니다.
+   - ④ **검증 테스트**: `project/tests/highscore_test.lua:30-52`에서 `nil`, 빈 문자열, 임의 문자열, 음수, `inf`, `nan`, 필드 누락, 숫자 타입 등 8종의 손상 입력을 검증합니다.
 
 ---
 
 ## 3-4. 알려진 문제와 한계
-- 현재까지 **기준선 + R1(`HelpScene`) + R2(`WaveParser` · `waves.txt`)**가 완료된 상태이며, R3/R4(적 3종·FSM), R5(업적), R6(저장/불러오기), R7(번짐 실측)은 후속 작업에서 구현 및 보고서 보완 예정입니다.
-- 현재 PC 환경에 `luajit` 단독 실행 파일이 없어 `lua`/`luac` 기준으로 테스트 및 전역 쓰기(`SETGLOBAL`/`SETTABUP`) 정적 검사를 수행했습니다.
+- 현재까지 **기준선 + R1~R6 + 게임플레이·연출 업그레이드**가 완료된 상태이며, **R7(번짐 실측)**만 후속 세션에서 진행 예정입니다.
+- 현재 PC 환경에 `luajit` 단독 실행 파일이 없어 `lua`/`luac` 기준으로 테스트 및 전역 쓰기(`SETGLOBAL`) 정적 검사를 수행했습니다.

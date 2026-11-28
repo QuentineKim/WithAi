@@ -36,4 +36,38 @@ function homing.steer(b, tx, ty, speed, turn)
   end
 end
 
+local PI = math.pi
+local TWO_PI = PI * 2
+local DEFAULT_OPTS = {}
+
+--- 각도를 (-pi, pi] 범위로 정규화한다.
+function homing.wrapPi(angle)
+  local a = (angle + PI) % TWO_PI
+  if a <= 0 then
+    a = a + TWO_PI
+  end
+  return a - PI
+end
+
+--- 각속도 제한 회전 + 감쇠 사인파 사행(Damped Sine Weave) 유도 조향.
+-- 초반에는 뱀처럼 S자로 크게 감아 돌다가 exp(-damp * age) 로 감쇠하며 목표에 수렴한다.
+function homing.steerWave(b, tx, ty, speed, dt, opts)
+  opts = opts or DEFAULT_OPTS
+  local maxTurnRate = opts.maxTurnRate or 6.5
+  local amp = opts.amp or 5.5
+  local freq = opts.freq or 18.0
+  local damp = opts.damp or 2.2
+
+  b.age = (b.age or 0) + dt
+  local cur = math.atan2(b.vy, b.vx)
+  local target = math.atan2(ty - b.y, tx - b.x)
+  local diff = homing.wrapPi(target - cur)
+  local maxStep = maxTurnRate * dt
+  local turn = math.max(-maxStep, math.min(maxStep, diff))
+  local weave = amp * math.sin(freq * b.age + (b.phase or 0)) * math.exp(-damp * b.age) * dt
+  local nextAngle = cur + turn + weave
+  b.vx = math.cos(nextAngle) * speed
+  b.vy = math.sin(nextAngle) * speed
+end
+
 return homing

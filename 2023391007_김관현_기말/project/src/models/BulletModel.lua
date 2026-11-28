@@ -11,6 +11,8 @@ local BulletModel = class()
 -- @field w,h   number
 -- @field vx,vy number  속도(px/s)
 -- @field kind  string  "player" | "enemy" | "missile"
+local MAX_TRAIL = 8
+
 function BulletModel:init(x, y, vx, vy, w, h, kind)
   self.x = x
   self.y = y
@@ -19,9 +21,23 @@ function BulletModel:init(x, y, vx, vy, w, h, kind)
   self.w = w
   self.h = h
   self.kind = kind
+  if kind == "missile" then
+    self.age = 0
+    self.phase = 0
+    self.trail = {}
+  end
 end
 
 function BulletModel:update(dt)
+  if self.trail then
+    self.trail[#self.trail + 1] = {
+      x = self.x + self.w * 0.5,
+      y = self.y + self.h * 0.5,
+    }
+    if #self.trail > MAX_TRAIL then
+      table.remove(self.trail, 1)
+    end
+  end
   self.x = self.x + self.vx * dt
   self.y = self.y + self.vy * dt
 end

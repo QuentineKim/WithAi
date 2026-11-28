@@ -4,6 +4,7 @@
 
 local class = require("class")
 local GameModel = require("GameModel")
+local AchievementModel = require("AchievementModel")
 local GameView = require("GameView")
 local InputController = require("InputController")
 
@@ -23,6 +24,10 @@ function PlayScene:init(ctx)
   })
   self.view = GameView({ width = ctx.width, height = ctx.height, rand = ctx.rand })
   self.controller = InputController(ctx.isDown)
+  self.achievements = AchievementModel()
+  self.achievements:subscribe(function(ev)
+    self.view:onEvent(ev)
+  end)
 end
 
 function PlayScene:update(dt)
@@ -39,7 +44,9 @@ function PlayScene:update(dt)
 
   local events = self.game:drainEvents()
   for i = 1, #events do
-    self.view:onEvent(events[i])
+    local ev = events[i]
+    self.view:onEvent(ev)
+    self.achievements:onEvent(ev)
   end
   self.view:update(dt)
 

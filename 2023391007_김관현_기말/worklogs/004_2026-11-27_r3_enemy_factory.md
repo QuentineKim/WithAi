@@ -4,19 +4,19 @@
 - `class.lua` 상속으로 적 3종(`BasicEnemy`, `ScoutEnemy`, `TankEnemy`)과 등록표 기반 `EnemyFactory`를 구현하고 `GameModel`·`EnemyView`·`waves.txt`에 연동한다.
 
 ## 프롬프트 기록 #1
-- 시각 / 커밋: 17:46 / `2eb0aef`
-- 도구: Antigravity
+- 시각 / 커밋: 17:46 / `2eb0aef` → `5b31ea1`
+- 도구: Antigravity (상시 규칙 `student-guide-workflow.md`, 참조 `class.lua` · `EnemyModel.lua` · `EnemyView.lua` · `docs/waves_format.md`)
 - 목적: 3회차(R3)·4회차(R4) 구현 계획 및 TODO 문서 계획 수립 요청
 - 프롬프트 원문:
   > 4회차까지 하고 일단 todo문서도 만들어
-- AI 결과 요약: `class.lua`·`EnemyView.lua`·`GameView.lua`를 읽고 R3(적 3종 + Factory), R4(적 AI 4상태 + 결정성), TODO 문서의 단계별 계획(수정/읽기 전용 파일, 먼저 쓸 테스트, 기존 `wave_parser_test`/`phase_test` 호환성 위험 대응)을 제시해 승인을 요청함.
+- AI 결과 요약: `class.lua`·`EnemyView.lua`·`GameView.lua`를 읽고 R3(적 3종 + Factory), R4(적 AI 4상태 + 결정성), TODO 문서의 단계별 계획(수정 허용/읽기 전용 파일 경계, Lua 5.1·MVC 제약, 먼저 쓸 테스트, 기존 `wave_parser_test`/`phase_test` 호환성 위험 대응)을 제시해 승인을 요청함.
 - 판정: 채택
 - 문제점: 없음
-- 다음 프롬프트에서 바꾼 점: 승인 후 1 태스크 = 1 커밋 원칙에 따라 R3를 먼저 TDD로 완료·커밋한 뒤 R4로 이어감.
+- 다음 프롬프트에서 바꾼 점: 승인 후 1 태스크 = 1 커밋 원칙에 따라 R3를 먼저 TDD로 완료·커밋(`5b31ea1`)한 뒤 R4로 이어감.
 
 ## 프롬프트 기록 #2
-- 시각 / 커밋: 17:48 / (커밋 전)
-- 도구: Antigravity (에이전트 `test-runner`, `lua-reviewer`)
+- 시각 / 커밋: 17:48 / `5b31ea1`
+- 도구: Antigravity (에이전트 `test-runner`, `lua-reviewer`, 스킬 `mvc-boundary` · `lua51-guard`)
 - 목적: 승인된 계획대로 R3 TDD 구현, 검증 및 리뷰 지적 보완
 - 프롬프트 원문:
   > ㄱㄱ
@@ -28,6 +28,15 @@
 - 문제점:
   - `GameModel.lua`에 `takeDamage` 이름을 써서 `phase_test.lua`의 보스 규칙 잔존 정적 검사를 깨뜨렸고, `enemy_hit` 이벤트 주석 및 View/`waves.txt` 연동 테스트가 초기에 누락됨.
 - 다음 프롬프트에서 바꾼 점: 읽기 전용 테스트의 정적 검사 키워드와 겹치지 않도록 `EnemyModel:hit(dmg)`로 명명하고, 리뷰에서 지적된 계약 주석·테스트를 커밋 전 즉시 보강함.
+
+## AI 오류 포착 #2 (게임인공지능 — 구조·계약 충돌)
+- 관련 프롬프트: `004` 프롬프트 기록 #2 (커밋 `5b31ea1`)
+- 증상: 적 다단 체력 피격을 위해 `EnemyModel:takeDamage`를 두고 `GameModel.lua`에서 `e:takeDamage(1)`을 호출하자, 기존 `phase_test.lua`의 `"GameModel 에는 보스 전용 규칙이 없다 (정적 검사)"`가 실패함 (`통과 8 / 실패 1`, 에러: `남아 있는 보스 규칙: takeDamage`).
+- 원인 위치: `project/src/models/GameModel.lua:238` 및 `project/src/models/EnemyModel.lua:46` (읽기 전용 `project/tests/phase_test.lua:141` 금지어 계약 위반)
+- 발견 방법: `test-runner` 실행 실패
+- 고친 방법과 다음 프롬프트에 추가한 제약:
+  - `EnemyModel`의 피격 메서드 이름을 `hit(dmg)`로 분리(`EnemyModel.lua:46`, `GameModel.lua:238`)해 보스 전용 규칙(`BossModel:takeDamage`)과 충돌하지 않게 수정하고 `phase_test.lua` 9/9 복구함.
+  - 이후 작업에서는 기존 읽기 전용 테스트의 정적 검사 계약까지 사전 확인 목록에 포함함.
 
 ## 검증
 - TDD 수정 전 실패 확인:

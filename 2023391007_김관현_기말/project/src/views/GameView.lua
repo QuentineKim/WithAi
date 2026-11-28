@@ -3,6 +3,7 @@
 -- Model 을 읽기만 한다. love 를 직접 부르지 않고 주입받은 gfx 로만 그린다(테스트 가능).
 
 local class = require("class")
+local StarfieldView = require("StarfieldView")
 local PlayerView = require("PlayerView")
 local EnemyView = require("EnemyView")
 local BulletView = require("BulletView")
@@ -12,33 +13,58 @@ local BossView = require("BossView")
 
 local GameView = class()
 
+local POWERUP_STYLE = {
+  spread = { r = 0.3, g = 1.0, b = 0.5, label = "S" },
+  shield = { r = 0.3, g = 0.9, b = 1.0, label = "B" },
+  slow   = { r = 0.8, g = 0.4, b = 1.0, label = "T" },
+}
+
+local function drawPowerups(gfx, powerups)
+  if not powerups then
+    return
+  end
+  for i = 1, #powerups do
+    local p = powerups[i]
+    local st = POWERUP_STYLE[p.kind] or POWERUP_STYLE.spread
+    gfx.setColor(st.r, st.g, st.b)
+    gfx.rectangle("fill", p.x, p.y, p.w, p.h)
+    gfx.setColor(0.05, 0.05, 0.1)
+    gfx.printf(st.label, p.x, p.y + 1, p.w, "center")
+  end
+end
+
 --- @param opts table  { width=number, height=number, rand=function|nil }
 function GameView:init(opts)
   self.width = opts.width
   self.height = opts.height
-  self.effects = EffectsView(opts.rand)
+  self.starfield = StarfieldView(opts.width, opts.height, opts.rand)
+  self.effects = EffectsView(opts.rand, opts.width, opts.height)
 end
 
 --- GameModel:drainEvents() 로 받은 이벤트 1개
 function GameView:onEvent(ev)
+  self.starfield:onEvent(ev)
   self.effects:onEvent(ev)
 end
 
 --- 연출 시간 진행 (Model 과 무관한 View 자신의 시간)
 function GameView:update(dt)
+  self.starfield:update(dt)
   self.effects:update(dt)
 end
 
 --- @param gfx  table  love.graphics 또는 가짜
 --- @param game table  GameModel (읽기 전용)
 function GameView:draw(gfx, game)
+  self.starfield:draw(gfx)
   local fx = self.effects
   gfx.push()
   gfx.translate(fx.ox, fx.oy)
   fx:drawFlash(gfx, self.width, self.height)
-  PlayerView.draw(gfx, game.player)
+  PlayerView.draw(gfx, game.player, game.shield, (game.overdriveTimer or 0) > 0)
   EnemyView.draw(gfx, game.enemies)
-  BossView.draw(gfx, game.boss, self.width)
+  BossView.draw(gfx, game.boss, self.width, self.height)
+  drawPowerups(gfx, game.powerups)
   BulletView.draw(gfx, game.bullets, game.enemyBullets)
   fx:drawParticles(gfx)
   gfx.pop()

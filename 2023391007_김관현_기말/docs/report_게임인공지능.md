@@ -1,7 +1,7 @@
-# [게임인공지능(3A)] 기말과제 보고서 (초안: 기준선 + R1~R4)
+# [게임인공지능(3A)] 기말과제 보고서 (초안: 기준선 + R1~R6 + 연출·전투 업그레이드)
 
 - **출발 코드**: 선택 B — `lua_tuto/mvc/week05/examples/galaga_states`
-- **현재 진행 상태**: 기준선, R1(`HelpScene`), R2(`WaveParser`), R3(적 3종·`EnemyFactory`), R4(적 AI 4상태 `EnemyAI`) 완료 (R5~R7 구현 후 보완 예정)
+- **현재 진행 상태**: 기준선, R1(`HelpScene`), R2(`WaveParser`), R3(적 3종·`EnemyFactory`), R4(적 AI 4상태 `EnemyAI`), R5(업적 3종 `AchievementModel` + `EffectsView`), R6(`HighScoreModel`) + Decorator(`WeaponDecorator`)/Graze·Overdrive/감쇠 사인파 유도탄/보스 광폭화·레이저 완료 (R7 번짐 실측만 남음)
 
 ---
 
@@ -9,12 +9,14 @@
 
 | 파일 / 기능 | 출처 | 수정 정도 |
 |---|---|---|
-| `project/src/` 기본 프레임워크 (`GameModel`, `FormationPhase`, `BossPhase`, `SceneStack`, `Title/Play/Pause/ResultScene`, Views, `InputController`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | R1(`HelpScene`), R2(`WaveParser`), R3(`EnemyFactory`), R4(`EnemyAI`) 연결부 추가 |
+| `project/src/` 기본 프레임워크 (`GameModel`, `FormationPhase`, `BossPhase`, `SceneStack`, `Title/Play/Pause/ResultScene`, Views, `InputController`, `main.lua`, `conf.lua`) | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/galaga_states`) | R1(`HelpScene`), R2(`WaveParser`), R3(`EnemyFactory`), R4(`EnemyAI`), R5(`AchievementModel`·`EffectsView`), R6(`HighScoreModel`·`ResultScene`·`ResultView`), 유도탄·Graze/파워업·보스 광폭화/레이저 연결부 추가 |
 | `project/tests/helper.lua`, `layer_check.lua`, `phase_test.lua`, `scene_test.lua` | 수업 공개 예제 (`lua_tuto/mvc/week05/examples/tests`) | `helper.lua`·`scene_test.lua`에 R1(`HelpScene`) 테스트 3건 추가 (`equivalence_test.lua` 제외) |
 | `project/src/scenes/HelpScene.lua`, `project/src/views/HelpView.lua` | AI 협업 작성 (R1 신규) | 신규 작성 |
 | `docs/waves_format.md`, `project/src/waves.txt`, `project/src/models/WaveParser.lua`, `project/tests/wave_parser_test.lua` | AI 협업 작성 (R2 신규) | 신규 작성 |
 | `project/src/models/{BasicEnemy,ScoutEnemy,TankEnemy,EnemyFactory}.lua`, `project/tests/enemy_factory_test.lua` | AI 협업 작성 (R3 신규) | 신규 작성 |
 | `project/src/models/EnemyAI.lua`, `project/tests/enemy_ai_test.lua` | AI 협업 작성 (R4 신규) | 신규 작성 |
+| `project/src/models/AchievementModel.lua`, `project/tests/achievement_test.lua` | AI 협업 작성 (R5 신규) | 신규 작성 |
+| `project/src/models/HighScoreModel.lua`, `project/src/models/WeaponDecorator.lua`, `project/src/views/StarfieldView.lua`, `project/tests/{highscore,homing,powerup_graze,boss_enrage}_test.lua` | AI 협업 작성 (R6 + 게임플레이 업그레이드 신규) | 신규 작성 |
 
 ---
 
@@ -39,7 +41,7 @@
 
 ---
 
-## 3-3. 패턴 적용표 (R5 업적 Observer 추후 추가 예정)
+## 3-3. 패턴 적용표
 
 | 패턴 | 이 패턴이 없었다면 생기는 증상 | 참여 객체 (`파일:줄`) | 대안 패턴과 고르지 않은 이유 |
 |---|---|---|---|
@@ -47,7 +49,9 @@
 | **State (진행 단계 FSM)** | 편대 유지 조건과 보스전 등장·이동·피격 규칙이 `GameModel:update` 내부 4~5곳에 흩어져 새 웨이브/단계 추가가 어려움 | `GameModel` (`project/src/models/GameModel.lua:56-64,151`), `FormationPhase`, `BossPhase` | 플래그 기반 조건 분기(`if bossSpawned ...`): 단계가 늘수록 조건문이 기하급수적으로 증가하고 단계별 테스트가 불가능해 State 객체로 분리 |
 | **Factory Method (등록표)** | `GameModel:spawnFormation`에 `if kind == "basic" ... elseif kind == "scout" ...` 분기가 늘어 새 적 추가 시 `GameModel`을 매번 수정해야 함 | `EnemyFactory` (`project/src/models/EnemyFactory.lua:15-56`), `BasicEnemy`, `ScoutEnemy`, `TankEnemy`, `GameModel:spawnFormation` (`project/src/models/GameModel.lua:70-83`) | 직접 생성 분기(`if/elseif`): R7에서 새 적 1종 추가 시 `GameModel`까지 번짐이 발생하므로 등록표 기반 Factory로 분리 |
 | **State (적 개별 AI FSM)** | 적 1기마다 진입·편대·돌격·복귀 플래그(`isDiving`, `isReturning`, `entered`)가 얽혀 잘못된 조합 상태가 생기고 전이 추적이 어려움 | `EnemyAI` (`project/src/models/EnemyAI.lua:14-103`), `EnemyModel:update` (`project/src/models/EnemyModel.lua:41-43`), `GameModel:_updateEnemies` (`project/src/models/GameModel.lua:192-200`) | 적마다 별도 상태 객체 인스턴스 생성(new State per enemy): 60Hz 루프에서 전이마다 테이블을 생성하면 GC 부담이 커지므로 상태 함수 테이블(`STATES`)은 공유하고 상태 값만 인스턴스에 저장 |
-| **의존성 주입(`ctx`) + MVC 경계** | 씬끼리 서로 `require`해 순환 참조로 로드 실패가 나고, `love` 전역 의존 때문에 창 없이 헤드리스 테스트를 돌릴 수 없음 | `main.lua` (`project/src/main.lua:24-45`), `PlayScene`, `InputController` | 전역 싱글톤/직접 `require`: 순환 `require` 및 `love` 결합으로 `layer_check` 위반과 테스트 불가 문제를 유발하므로 `ctx` 테이블로 한 번에 주입 |
+| **Observer (이벤트 구독)** | `GameModel`의 발사·피격·보스 처치 코드 안에 업적 조건 검사와 View 알림 호출이 직접 섞여 `GameModel`이 비대해지고 업적 추가 시마다 게임 규칙 코드를 고쳐야 함 | `AchievementModel` (`project/src/models/AchievementModel.lua:19-95`), `PlayScene` (`project/src/scenes/PlayScene.lua:27-30,45-50`), `EffectsView` (`project/src/views/EffectsView.lua:150-178,220-244`) | `GameModel` 직접 폴링/직접 호출: `GameModel`이 업적 모델·알림 뷰에 직접 의존하게 되므로 `drainEvents()`와 `subscribe()` 기반 단방향 Observer로 분리 |
+| **Decorator (무기 강화 조합, 가산점)** | 기본 단발·3갈래 산탄(`Spread`)·오버드라이브 연사 2배(`Rapid`) 조합마다 `if spread and overdrive ... elseif spread ...` 분기와 중복 탄환 생성 코드가 기하급수적으로 늘어남 | `WeaponDecorator` (`project/src/models/WeaponDecorator.lua:12-78`: `BaseWeapon`, `SpreadDecorator`, `RapidDecorator`), `GameModel` (`_weaponBase`/`_weaponSpread`/`_weaponOverdrive` 사전 조합) | 상속 서브클래스 조합(`SpreadRapidWeapon` 등): 효과가 하나 늘 때마다 클래스가 $2^n$개로 폭증하므로 동일 인터페이스(`cooldown()`, `fire()`)를 감싸는 Decorator로 합성 |
+| **의존성 주입(`ctx`) + MVC 경계** | 씬끼리 서로 `require`해 순환 참조로 로드 실패가 나고, `love` 전역 의존 때문에 창 없이 헤드리스 테스트를 돌릴 수 없음 | `main.lua` (`project/src/main.lua:36-62`), `PlayScene`, `InputController` | 전역 싱글톤/직접 `require`: 순환 `require` 및 `love` 결합으로 `layer_check` 위반과 테스트 불가 문제를 유발하므로 `ctx` 테이블로 한 번에 주입 |
 
 - **과잉 패턴 회피 사례**: `EnemyView`의 적 종류별 색상 매핑(`project/src/views/EnemyView.lua:7-11`)은 별도 View 서브클래스나 Abstract Factory로 쪼개지 않고 `COLORS[e.kind]` 단순 룩업 테이블로 유지해 불필요한 파일 증가를 피했습니다.
 
@@ -73,5 +77,5 @@
 ---
 
 ## 3-6. 알려진 문제와 한계
-- 현재까지 **기준선 + R1(`HelpScene`)**만 구현되었으며, R2~R7 기능 및 신규 테스트(10개 이상 중 3개 완료)는 후속 세션에서 진행 예정입니다.
+- 현재까지 **기준선 + R1~R6 + 게임플레이·연출 업그레이드**가 구현되었으며, **R7(번짐 실측)**만 후속 세션에서 진행 예정입니다.
 - 현재 PC 환경에 `luajit` CLI가 설치되어 있지 않아 헤드리스 테스트와 계층 검사는 Lua 5.1.5(`lua`)로 검증했습니다.

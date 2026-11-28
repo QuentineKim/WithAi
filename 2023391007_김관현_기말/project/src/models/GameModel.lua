@@ -8,6 +8,7 @@ local Rng = require("rng")
 local PlayerModel = require("PlayerModel")
 local EnemyFactory = require("EnemyFactory")
 local BulletModel = require("BulletModel")
+local WeaponDecorator = require("WeaponDecorator")
 local homing = require("homing")
 local FormationPhase = require("FormationPhase")
 
@@ -15,19 +16,29 @@ local GameModel = class()
 
 -- 규칙 상수(설정). love 와 무관한 월드 수치.
 local PLAYER_SPEED = 320
-local BULLET_SPEED = 520
 local ENEMY_BULLET_SPEED = 240
-local FIRE_COOLDOWN = 0.25
 local ENEMY_FIRE_INTERVAL = 0.6
 local FORMATION_SPEED = 40
 local FORMATION_DESCEND = 16
 local MISSILE_SPEED = 440
-local MISSILE_TURN = 0.08
+local MISSILE_SPREAD = 55 * math.pi / 180
 local MISSILE_COOLDOWN = 0.6
+local GRAZE_MARGIN = 18
+local GRAZE_STEP = 25
+local OVERDRIVE_TIME = 5.0
+local SPREAD_TIME = 8.0
+local SLOW_TIME = 6.0
+local SLOW_SCALE = 0.45
+local POWERUP_SPEED = 110
+local POWERUP_KINDS = { "spread", "shield", "slow" }
 
 -- AABB 겹침
 local function overlaps(a, b)
   return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
+end
+
+local function overlapsExpanded(a, b, m)
+  return a.x < b.x + b.w + m and b.x - m < a.x + a.w and a.y < b.y + b.h + m and b.y - m < a.y + a.h
 end
 
 --- @param opts table  { width=number, height=number, seed=number, waves=table|nil }
@@ -37,6 +48,9 @@ function GameModel:init(opts)
   self.height = opts.height or 800
   self.rng = Rng(opts.seed or 1)
   self.waves = opts.waves
+  self._weaponBase = WeaponDecorator.BaseWeapon()
+  self._weaponSpread = WeaponDecorator.SpreadDecorator(self._weaponBase)
+  self._weaponOverdrive = WeaponDecorator.RapidDecorator(self._weaponSpread, 0.5)
   self._aiCtx = {
     rng = self.rng,
     playerX = 0,
@@ -52,8 +66,14 @@ function GameModel:reset()
   self.bullets = {}
   self.enemyBullets = {}
   self.enemies = {}
+  self.powerups = {}
   self.score = 0
   self.lives = 3
+  self.grazeGauge = 0
+  self.overdriveTimer = 0
+  self.spreadTimer = 0
+  self.slowTimer = 0
+  self.shield = false
   self.state = "playing" -- 결과: "playing" | "gameover" | "won"
   self.formationDir = 1
   self.enemyFireTimer = ENEMY_FIRE_INTERVAL
@@ -121,28 +141,51 @@ function GameModel:update(dt, input)
   local move = input.move or 0
   local fire = input.fire or false
 
+  -- 플레이어 타이머
+  if self.overdriveTimer > 0 then
+    self.overdriveTimer = math.max(0, self.overdriveTimer - dt)
+  end
+  if self.spreadTimer > 0 then
+    self.spreadTimer = math.max(0, self.spreadTimer - dt)
+  end
+  if self.slowTimer > 0 then
+    self.slowTimer = math.max(0, self.slowTimer - dt)
+  end
+
   -- 플레이어
   self.player:move(dt, move, PLAYER_SPEED)
   self.player:clamp(0, self.width)
   self.player:tickCooldown(dt)
   if fire and self.player:canFire() then
-    local p = self.player
-    self.bullets[#self.bullets + 1] =
-      BulletModel(p.x + p.w * 0.5 - 2, p.y, 0, -BULLET_SPEED, 4, 12, "player")
-    self.player:resetCooldown(FIRE_COOLDOWN)
+    local weapon = self._weaponBase
+    if self.overdriveTimer > 0 then
+      weapon = self._weaponOverdrive
+    elseif self.spreadTimer > 0 then
+      weapon = self._weaponSpread
+    end
+    weapon:fire(self.player, self.bullets)
+    self.player:resetCooldown(weapon:cooldown())
     self:_emit({ type = "fire" })
   end
 
-  -- 유도 미사일 발사(별도 쿨다운). 기존 BulletModel 을 kind="missile" 로 재사용한다.
+  -- 트윈 유도 미사일 측면 사출 + 감쇠 사인파 조향
   self.missileCooldown = self.missileCooldown - dt
   if input.missile and self.missileCooldown <= 0 then
     local p = self.player
-    self.bullets[#self.bullets + 1] =
-      BulletModel(p.x + p.w * 0.5 - 3, p.y, 0, -MISSILE_SPEED, 6, 14, "missile")
+    local cx = p.x + p.w * 0.5 - 3
+    local baseAngle = -math.pi * 0.5
+    local a1 = baseAngle - MISSILE_SPREAD
+    local a2 = baseAngle + MISSILE_SPREAD
+    local m1 = BulletModel(cx - 8, p.y, math.cos(a1) * MISSILE_SPEED, math.sin(a1) * MISSILE_SPEED, 6, 14, "missile")
+    local m2 = BulletModel(cx + 8, p.y, math.cos(a2) * MISSILE_SPEED, math.sin(a2) * MISSILE_SPEED, 6, 14, "missile")
+    m1.phase = 0
+    m2.phase = math.pi
+    self.bullets[#self.bullets + 1] = m1
+    self.bullets[#self.bullets + 1] = m2
     self.missileCooldown = MISSILE_COOLDOWN
     self:_emit({ type = "fire" })
   end
-  self:_steerMissiles()
+  self:_steerMissiles(dt)
 
   -- 플레이어 총알 이동/제거
   for i = #self.bullets, 1, -1 do
@@ -158,15 +201,17 @@ function GameModel:update(dt, input)
   self:_updateEnemyFire(dt)
   self.phase:update(self, dt)
 
-  -- 적 총알 이동/제거
+  -- 적 총알 이동/제거 (슬로우 파워업 적용)
+  local enemyBulletDt = (self.slowTimer > 0) and (dt * SLOW_SCALE) or dt
   for i = #self.enemyBullets, 1, -1 do
     local b = self.enemyBullets[i]
-    b:update(dt)
+    b:update(enemyBulletDt)
     if b:isOffscreen(self.width, self.height) then
       table.remove(self.enemyBullets, i)
     end
   end
 
+  self:_updatePowerups(dt)
   self:_resolveCollisions()
   self.phase:resolveCollisions(self)
   self.phase:afterStep(self)
@@ -228,6 +273,26 @@ function GameModel:_updateEnemyFire(dt)
     BulletModel(e:centerX() - 2, e.y + e.h, 0, ENEMY_BULLET_SPEED, 4, 12, "enemy")
 end
 
+function GameModel:_updatePowerups(dt)
+  for i = #self.powerups, 1, -1 do
+    local pu = self.powerups[i]
+    pu.y = pu.y + pu.vy * dt
+    if overlaps(pu, self.player) then
+      if pu.kind == "spread" then
+        self.spreadTimer = SPREAD_TIME
+      elseif pu.kind == "shield" then
+        self.shield = true
+      elseif pu.kind == "slow" then
+        self.slowTimer = SLOW_TIME
+      end
+      self:_emit({ type = "powerup_picked", kind = pu.kind, x = pu.x, y = pu.y })
+      table.remove(self.powerups, i)
+    elseif pu.y > self.height + 24 then
+      table.remove(self.powerups, i)
+    end
+  end
+end
+
 -- 모든 단계에 공통인 충돌. 단계 고유 충돌(보스)은 phase:resolveCollisions 가 맡는다.
 function GameModel:_resolveCollisions()
   -- 플레이어 총알 × 적
@@ -236,8 +301,22 @@ function GameModel:_resolveCollisions()
     for _, e in ipairs(self.enemies) do
       if e.alive and overlaps(b, e) then
         if e:hit(1) then
-          self.score = self.score + (e.scoreValue or 100)
-          self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+          local isDive = (e.aiState == "dive")
+          local pts = (e.scoreValue or 100) * (isDive and 2 or 1)
+          self.score = self.score + pts
+          local ex, ey = e:centerX(), e:centerY()
+          self:_emit({ type = "enemy_destroyed", x = ex, y = ey })
+          if isDive and self.rng:range(2) == 1 then
+            local kind = POWERUP_KINDS[self.rng:range(#POWERUP_KINDS)]
+            self.powerups[#self.powerups + 1] = {
+              x = ex - 9,
+              y = ey - 9,
+              w = 18,
+              h = 18,
+              vy = POWERUP_SPEED,
+              kind = kind,
+            }
+          end
         else
           self:_emit({ type = "enemy_hit", x = e:centerX(), y = e:centerY() })
         end
@@ -247,22 +326,41 @@ function GameModel:_resolveCollisions()
     end
   end
 
-  -- 적 총알 × 플레이어
+  -- 적 총알 × 플레이어 (충돌 + 스침 Graze)
   for i = #self.enemyBullets, 1, -1 do
-    if overlaps(self.enemyBullets[i], self.player) then
+    local eb = self.enemyBullets[i]
+    if overlaps(eb, self.player) then
       table.remove(self.enemyBullets, i)
-      self.lives = self.lives - 1
-      self:_emit({ type = "player_hit" })
-      if self.lives <= 0 then
-        self.state = "gameover"
-        self:_emit({ type = "game_over" })
+      if self.shield then
+        self.shield = false
+        self:_emit({ type = "shield_broken" })
+      else
+        self.lives = self.lives - 1
+        self:_emit({ type = "player_hit" })
+        if self.lives <= 0 then
+          self.state = "gameover"
+          self:_emit({ type = "game_over" })
+          break
+        end
+      end
+    elseif not eb.grazed and overlapsExpanded(eb, self.player, GRAZE_MARGIN) then
+      eb.grazed = true
+      self.score = self.score + 25
+      self:_emit({ type = "graze", x = self.player.x + self.player.w * 0.5, y = self.player.y })
+      if self.overdriveTimer <= 0 then
+        self.grazeGauge = self.grazeGauge + GRAZE_STEP
+        if self.grazeGauge >= 100 then
+          self.grazeGauge = 0
+          self.overdriveTimer = OVERDRIVE_TIME
+          self:_emit({ type = "overdrive_started" })
+        end
       end
     end
   end
 end
 
--- 살아있는 적·보스 중 가장 가까운 쪽으로 미사일을 꺾는다.
-function GameModel:_steerMissiles()
+-- 살아있는 적·보스 중 가장 가까운 쪽으로 미사일을 감쇠 사인파 조향으로 꺾는다.
+function GameModel:_steerMissiles(dt)
   local targets
   for i = 1, #self.bullets do
     local b = self.bullets[i]
@@ -280,7 +378,7 @@ function GameModel:_steerMissiles()
       end
       local tx, ty = homing.nearest(targets, b.x, b.y)
       if tx then
-        homing.steer(b, tx, ty, MISSILE_SPEED, MISSILE_TURN)
+        homing.steerWave(b, tx, ty, MISSILE_SPEED, dt)
       end
     end
   end

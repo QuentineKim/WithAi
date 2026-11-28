@@ -8,9 +8,24 @@ love.filesystem.setRequirePath("?.lua;?/init.lua;models/?.lua;views/?.lua;contro
 
 local SceneStack = require("SceneStack")
 local WaveParser = require("WaveParser")
+local HighScoreModel = require("HighScoreModel")
+
+local HIGHSCORE_FILE = "highscore.txt"
 
 local stack
 local games = 0
+
+local function loadHighScore()
+  local ok, data = pcall(love.filesystem.read, HIGHSCORE_FILE)
+  if ok then
+    return data
+  end
+  return nil
+end
+
+local function saveHighScore(text)
+  pcall(love.filesystem.write, HIGHSCORE_FILE, text)
+end
 
 -- os.time 은 초 단위라 1초 안에 재도전하면 같은 시드(= 똑같은 판)가 나온다. 판 번호를 섞는다.
 local function newSeed()
@@ -35,6 +50,8 @@ function love.load()
     seed = newSeed,
     quit = love.event.quit,
     waves = waves,
+    highScore = HighScoreModel(loadHighScore()),
+    saveHighScore = saveHighScore,
     scenes = {
       Title = require("TitleScene"),
       Help = require("HelpScene"),
