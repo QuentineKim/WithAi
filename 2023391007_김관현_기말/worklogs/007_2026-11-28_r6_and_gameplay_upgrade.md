@@ -1,8 +1,8 @@
 # 작업 로그 007 — R6 하이스코어 저장/복원 + 게임플레이·연출 업그레이드 (Steps A~E)
 
 - **날짜**: 2026-11-28
-- **사용 도구**: Antigravity (Gemini + `test-runner` / `lua-reviewer` 서브에이전트)
-- **연관 커밋**: `(커밋 전)`
+- **사용 도구**: Antigravity (Gemini + `test-runner` / `lua-reviewer` 서브에이전트, 상시 규칙 `.agents/rules/student-guide-workflow.md` · `project-core.md` · `AGENTS.md` 자동 적용)
+- **연관 커밋**: `deef986` → `a723406` (R5·R6·업그레이드 통합), `4f919e1` (보스 레이저·충돌 보완)
 
 ---
 

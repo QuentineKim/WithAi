@@ -13,8 +13,8 @@
 | 2회차 | **R2** (`docs/waves_format.md`, `waves.txt`, `WaveParser`) | `2eb0aef` | `003` | `wave_parser_test.lua` 10/10 |
 | 3회차 | **R3** (적 3종 `Basic`/`Scout`/`Tank` 상속 + `EnemyFactory`) | `5b31ea1` | `004` | `enemy_factory_test.lua` 6/6 |
 | 4회차 | **R4** (적 AI 4상태 `enter`→`formation`→`dive`→`return`, `rng` 결정성) | `8699286` | `005` | `enemy_ai_test.lua` 6/6 |
-| 5회차 | **R5** (업적 3종 `trigger_happy`/`last_stand`/`clean_boss` + `EffectsView` 폭죽·경보·통합 배너) | `(커밋 전)` | `006` | `achievement_test.lua` 8/8 |
-| 6회차 | **R6** (`HighScoreModel` 저장/복원) + **패럴랙스 우주 · 감쇠 사인파 트윈 유도탄 · Graze/Overdrive/파워업(`WeaponDecorator`) · 보스 광폭화/레이저** | `(커밋 전)` | `007` | 신규 4종 21/21 (총 79/79) |
+| 5회차 | **R5** (업적 3종 `trigger_happy`/`last_stand`/`clean_boss` + `EffectsView` 폭죽·경보·통합 배너) | `a723406` | `006` | `achievement_test.lua` 8/8 |
+| 6회차 | **R6** (`HighScoreModel` 저장/복원) + **패럴랙스 우주 · 감쇠 사인파 트윈 유도탄 · Graze/Overdrive/파워업(`WeaponDecorator`) · 보스 광폭화/레이저** | `a723406`, `4f919e1` | `007` | 신규 4종 21/21 (총 79/79) |
 
 - 공통 검사 통과: `layer_check.lua` (38개 파일, 위반 0건), `phase_test.lua` (9/9), `luac -l -p` (전역 쓰기 0건).
 

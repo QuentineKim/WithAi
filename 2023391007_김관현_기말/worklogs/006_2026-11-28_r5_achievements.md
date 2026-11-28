@@ -15,8 +15,8 @@
 - 다음 프롬프트에서 바꾼 점: 기본 업적 3종 대신 특이한 조건의 업적과 요란한 게임 연출을 추가하고 알림 UI는 `EffectsView` 배너 영역에 통합하도록 확정함.
 
 ## 프롬프트 기록 #2
-- 시각 / 커밋: 10:21 / (커밋 전)
-- 도구: Antigravity (에이전트 `test-runner`, `lua-reviewer`)
+- 시각 / 커밋: 10:21 / `deef986` → `a723406`
+- 도구: Antigravity (에이전트 `test-runner`, `lua-reviewer`, 상시 규칙 `.agents/rules/student-guide-workflow.md` · `project-core.md` · `AGENTS.md` 자동 적용)
 - 목적: 특이 업적 3종 + 보스 경보·폭죽·네온 배너 연출 TDD 구현 및 리뷰 보완
 - 프롬프트 원문:
   > 추천 업적 좀 특이한걸로 변경해서 하고 게임 요소도 좀 요란한거 하나 추가해보자 그런 다음 알림 ui는 베너 영역에 통합하는게 좋을거 같긴해 좋아 이대로 진행시켜
@@ -52,5 +52,5 @@
 1) 완료: R5 완료 — `AchievementModel.lua`(Observer: `trigger_happy`, `last_stand`, `clean_boss`), `EffectsView.lua`(보스 경보·36발 폭죽·네온 점멸 업적 배너 큐), `PlayScene.lua` 구독 연결, `achievement_test.lua` 8/8 및 전체 58테스트+`layer_check`(35개 0건) 통과, `report_게임인공지능.md` Observer 행 추가.
 2) 바뀐 파일: `models/AchievementModel.lua`, `views/EffectsView.lua`, `scenes/PlayScene.lua`, `tests/achievement_test.lua`, `README.md`, `TODO.md`, `docs/report_*.md`, `worklogs/006_2026-11-28_r5_achievements.md`.
 3) 정한 규칙: `GameModel.lua`는 업적을 전혀 모름(`drainEvents()`만 소비), `EffectsView`는 `love` 없이 `gfx`와 주입 `rand`만 사용, 화면 문구는 영문 ASCII 유지.
-4) 남은 문제: 현재 R5 수정분 커밋 전 상태, LÖVE 창 시각 확인 필요, R6(하이스코어 저장/불러오기)·R7(번짐 실측)·최종 회고·`docs/git_log.txt` 미완료.
+4) 남은 문제: 커밋 `a723406`(R5+R6+업그레이드 통합 반영) 완료, LÖVE 창 시각 확인 필요, R7(번짐 실측)·최종 회고·`docs/git_log.txt` 미완료.
 5) 다음 태스크: R5 커밋 후 6회차에서 **R6(하이스코어 저장/불러오기 — Model은 순수 직렬화/역직렬화+손상 복구, 파일 I/O는 `main.lua`에서만)** 계획 수립부터 시작.
