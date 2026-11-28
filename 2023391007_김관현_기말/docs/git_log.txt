@@ -1,4 +1,23 @@
-﻿commit b1bd3659574e7aaf64fd1f502fbe0123d6ec01b9
+﻿commit 5262b765ffec979376fbf5a3fe60c24790bde395
+Author: QuentineKim <153470865+QuentineKim@users.noreply.github.com>
+Date:   2026-11-28 14:34:17 +0900
+
+    docs: record verified LOVE 11.5 playtest in worklog 008 and TODO
+
+ 2023391007_김관현_기말/TODO.md                                      | 4 ++--
+ 2023391007_김관현_기말/worklogs/008_2026-11-28_r7_spread_measure.md | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+commit f6fc969a0ba8939b987b38712dd3ea2fa8369b8b
+Author: QuentineKim <153470865+QuentineKim@users.noreply.github.com>
+Date:   2026-11-28 14:28:12 +0900
+
+    docs: generate git_log.txt for final submission
+
+ 2023391007_김관현_기말/docs/git_log.txt | 2679 +++++++++++++++++++++++++++++++
+ 1 file changed, 2679 insertions(+)
+
+commit b1bd3659574e7aaf64fd1f502fbe0123d6ec01b9
 Author: QuentineKim <153470865+QuentineKim@users.noreply.github.com>
 Date:   2026-11-28 14:28:11 +0900
 
