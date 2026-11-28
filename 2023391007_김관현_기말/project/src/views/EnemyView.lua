@@ -8,6 +8,7 @@ local COLORS = {
   basic = { 1, 0.4, 0.4 },
   scout = { 1, 0.85, 0.25 },
   tank = { 0.45, 0.75, 1 },
+  sniper = { 0.85, 0.35, 1 },
 }
 
 --- @param enemies table  EnemyModel 배열 (읽기 전용)

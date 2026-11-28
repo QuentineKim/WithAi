@@ -108,7 +108,7 @@ h.test("waves.txt 의 모든 spawn.kind 가 EnemyFactory 에 등록되어 있다
       kinds[s.kind] = true
     end
   end
-  return kinds.basic == true and kinds.scout == true and kinds.tank == true
+  return kinds.basic == true and kinds.scout == true and kinds.tank == true and kinds.sniper == true
 end)
 
 -- 6. EnemyView 종류별 색상 분기 및 미등록 종류 기본색 fallback
@@ -123,17 +123,46 @@ h.test("EnemyView.draw 는 적 종류별 색상을 적용하고 미등록 종류
     EnemyFactory.create("basic", 0, 0),
     EnemyFactory.create("scout", 50, 0),
     EnemyFactory.create("tank", 100, 0),
-    EnemyModel(150, 0, "unlisted_kind"),
+    EnemyFactory.create("sniper", 150, 0),
+    EnemyModel(200, 0, "unlisted_kind"),
   }
   EnemyView.draw(gfx, enemies)
 
-  -- basic(1, 0.4, 0.4), scout(1, 0.85, 0.25), tank(0.45, 0.75, 1), fallback(1, 0.4, 0.4)
-  return #colors == 4
+  -- basic, scout, tank, sniper 각각 고유 색 + fallback == basic
+  return #colors == 5
     and colors[1][2] ~= colors[2][2]
     and colors[2][3] ~= colors[3][3]
-    and colors[4][1] == colors[1][1]
-    and colors[4][2] == colors[1][2]
-    and colors[4][3] == colors[1][3]
+    and colors[4][1] ~= colors[3][1]
+    and colors[4][3] ~= colors[1][3]
+    and colors[5][1] == colors[1][1]
+    and colors[5][2] == colors[1][2]
+    and colors[5][3] == colors[1][3]
+end)
+
+-- 7. R7 SniperEnemy 생성·상속·GameModel 무수정 연동
+h.test("R7 SniperEnemy: 생성·상속·고속 돌격 속도·GameModel 무수정 1발 격파(200점)", function()
+  local scout = EnemyFactory.create("scout", 0, 0)
+  local sn = EnemyFactory.create("sniper", 80, 90)
+  local okProps = sn.kind == "sniper"
+    and sn.hp == 1
+    and sn.maxHp == 1
+    and sn.scoreValue == 200
+    and sn.diveSpeed > scout.diveSpeed
+    and sn.hit == EnemyModel.hit
+    and sn.update == EnemyModel.update
+  if not okProps then
+    return false
+  end
+
+  local waves = {
+    { id = 1, spawns = { { kind = "sniper", x = 140, y = 100 } } },
+  }
+  local g = GameModel({ width = 600, height = 800, seed = 1, waves = waves })
+  local target = g.enemies[1]
+  g.bullets[#g.bullets + 1] = BulletModel(target.x + 5, target.y + 5, 0, 0, 4, 12, "player")
+  g:update(DT, IDLE)
+  local evs = g:drainEvents()
+  return (not target.alive) and g.score == 200 and hasEvent(evs, "enemy_destroyed")
 end)
 
 h.finish()

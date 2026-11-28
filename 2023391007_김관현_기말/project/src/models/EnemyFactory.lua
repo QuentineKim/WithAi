@@ -5,6 +5,7 @@
 local BasicEnemy = require("BasicEnemy")
 local ScoutEnemy = require("ScoutEnemy")
 local TankEnemy = require("TankEnemy")
+local SniperEnemy = require("SniperEnemy")
 
 local error = error
 local tostring = tostring
@@ -21,6 +22,9 @@ local REGISTRY = {
   end,
   tank = function(x, y)
     return TankEnemy(x, y)
+  end,
+  sniper = function(x, y)
+    return SniperEnemy(x, y)
   end,
 }
 

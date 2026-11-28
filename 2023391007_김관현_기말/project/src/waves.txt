@@ -17,10 +17,10 @@ spawn basic 300 165
 spawn basic 370 165
 spawn basic 440 165
 
-# 웨이브 2: V자 정찰 편대
+# 웨이브 2: V자 정찰 편대 + 저격수
 wave 2
-spawn scout 60 60
-spawn scout 480 60
+spawn sniper 60 60
+spawn sniper 480 60
 spawn scout 120 100
 spawn scout 420 100
 spawn basic 180 140
@@ -32,13 +32,13 @@ spawn basic 240 60
 spawn basic 300 60
 spawn basic 360 60
 
-# 웨이브 3: 중장갑 집중 편대
+# 웨이브 3: 중장갑·저격수 집중 편대
 wave 3
-spawn tank 80 70
+spawn sniper 80 70
 spawn tank 180 70
 spawn tank 280 70
 spawn tank 380 70
-spawn tank 480 70
+spawn sniper 480 70
 spawn scout 100 130
 spawn scout 180 130
 spawn scout 260 130
